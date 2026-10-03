@@ -1,0 +1,5 @@
+/app/.env
+/app/vendor/
+/app/node_modules/
+/app/database/*.sqlite*
+/app/storage/logs/*.log
