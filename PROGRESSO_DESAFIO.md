@@ -18,6 +18,7 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `DESAFIO.md`.
 - [x] Swagger / OpenAPI 3.0.
 - [x] Testes automatizados PHPUnit e roteiro manual: última suíte local com 79 testes e 487 verificações.
 - [x] Concorrência no MySQL isolado: 5 testes e 34 verificações, incluindo reservas, estoque e pagamentos.
+- [x] Instalação limpa do código versionado: build, migrations, importação, seed e 24 verificações funcionais, em ambiente separado. Consulte `GUIA_DOCKER.md`.
 - [x] Separação de responsabilidades entre controllers, services e models.
 - [x] Docker com aplicação, MySQL, setup, scheduler e serviço de testes.
 - [x] Verbos HTTP para consultas, criação, atualização e exclusão.

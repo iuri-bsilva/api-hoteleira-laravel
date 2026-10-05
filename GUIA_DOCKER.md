@@ -1,5 +1,13 @@
 # Laravel e MySQL com Docker
 
+## Validação de instalação limpa
+
+Em 05/10/2026 foi instalada uma cópia do commit `09642c2` obtida por `git archive`, sem vendor, arquivos `.env` locais ou bancos existentes. `docker/init.ps1` gerou novas credenciais. A instalação usou o projeto Compose separado `foco-clean-validation`, rede e volumes novos, aplicação na porta 18080 e MySQL sem porta publicada. Apenas essas opções de isolamento foram alteradas em um arquivo Compose adicional; as etapas de build, setup e execução seguiram o fluxo abaixo.
+
+Passaram 24 verificações funcionais: migrations e contagens de importação (3 hotéis, 6 quartos, 6 reservas, 6 hóspedes, 18 diárias, 1 pagamento), 9 categorias padrão e ausência de usuário padrão, acesso ao Swagger/OpenAPI, proteção sem token, login e permissões, vínculo quarto/categoria, cupom percentual, reserva com alocação automática e taxa, esgotamento de estoque, quitação, reenvio idempotente, logout e token revogado. `schedule:list` confirmou o registro de `hotels:import`, e o serviço scheduler iniciou normalmente. Esses checks de instalação complementam as suítes PHPUnit; não alteram a contagem de testes dessas suítes.
+
+O ambiente temporário, seus volumes e as credenciais de validação foram removidos ao terminar. A aplicação normal na porta 8080 e o MySQL existente não foram recriados nem usados nesses testes. Ao repetir a instalação, use checkout e banco novos, evitando apontar os testes para dados reais. Com a instalação normal, os endereços continuam 8080 para a aplicação e 3307 para o Workbench.
+
 Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, categorias padrão e scheduler. Requer Docker Desktop ativo com backend Linux/WSL2 e Docker Compose v2. Build, migrations, importação e criação das categorias conferidos até 05/10/2026. A suíte PHPUnit executa em SQLite em memória; cenários de concorrência de bloqueios no MySQL estão descritos em `TESTES_MANUAIS.md`.
 
 ## Iniciar no PowerShell

@@ -1,5 +1,18 @@
 # Roteiro de testes manuais
 
+## Instalação em ambiente novo
+
+Validação realizada em 05/10/2026: 24 verificações funcionais passaram em cópia limpa do commit `09642c2`, sem usar o banco existente. Para repetir:
+
+1. Use checkout e banco separados. Execute `docker/init.ps1` para gerar credenciais novas e inicie o Docker conforme `GUIA_DOCKER.md`. Caso a aplicação atual esteja ativa, utilize portas, projeto Compose e volumes diferentes; não compartilhe os volumes existentes.
+2. Confira `logs setup`: migrations, importação e seeder sem erros. Banco inicial: 3 hotéis, 6 quartos, 6 reservas, 6 hóspedes, 18 diárias, 1 pagamento e 9 categorias. Deve começar sem usuário padrão.
+3. Abra `/docs` e `/openapi.json`. GET `/api/hotels` sem token deve retornar 401.
+4. Crie usuário e conceda acesso manager ao hotel 1 com os comandos do guia. Faça login, consulte `/auth/me` e confira hotéis vinculados.
+5. Vincule um quarto a uma categoria, crie cupom percentual de 10% e reserve em período livre com diária 250.00 e taxa 10.00. Esperado total 235.00; repetir reserva na categoria com estoque esgotado retorna 409.
+6. Registre pagamento 235.00: saldo zero. Repita a chave e os dados: 200, sem duplicação. Faça logout e confirme que o token passa a retornar 401.
+7. Execute `php artisan schedule:list` dentro do container: `hotels:import` deve estar registrado. Confira que o scheduler está ativo.
+8. Remova apenas o ambiente de validação e seus volumes descartáveis, identificando explicitamente seu projeto Compose. Nunca remova os volumes da aplicação em uso.
+
 ## Reprodução da validação concorrente automatizada
 
 Em 05/10/2026 passaram 5 testes MySQL com 34 verificações, além dos 79 testes SQLite com 487 verificações. Os passos manuais abaixo continuam disponíveis; não são necessários para disparar a suíte automatizada.
