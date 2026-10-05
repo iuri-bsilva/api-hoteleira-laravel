@@ -2,42 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Http\Requests\LoginRequest;
+use App\Interfaces\Services\AuthServiceInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function __construct(private readonly AuthServiceInterface $auth) {}
+
+    public function login(LoginRequest $request)
     {
-        $data = $request->validate([
-            'email' => 'required|email|max:255',
-            'password' => 'required|string|max:255',
-            'device_name' => 'sometimes|required|string|max:100',
-        ]);
-        $user = User::where('email', strtolower($data['email']))->first();
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        $result = $this->auth->login($request->validated());
+        if ($result === null) {
             return response()->json(['message' => 'Credenciais inválidas.'], 401);
         }
-        $expiresAt = now()->addHours(8);
-        $token = $user->createToken($data['device_name'] ?? 'api', ['*'], $expiresAt);
 
-        return response()->json([
-            'token_type' => 'Bearer',
-            'access_token' => $token->plainTextToken,
-            'expires_at' => $expiresAt->toIso8601String(),
-            'user' => $user,
-        ]);
+        return response()->json($result);
     }
 
     public function me(Request $request)
     {
-        return response()->json($request->user()->load('hotels'));
+        return response()->json($this->auth->me($request->user()));
     }
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $this->auth->logout($request->user());
 
         return response()->json(['message' => 'Token revogado.']);
     }

@@ -1,5 +1,17 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de autenticação
+
+Atualize o Docker com `docker compose --env-file .env.docker up -d --build`. Não há migration nova. Use um usuário de teste e mantenha os tokens apenas no Insomnia/Swagger, sem incluí-los na documentação ou em commits.
+
+1. POST `/api/auth/login` com `{"email":"SEU_EMAIL","password":"SUA_SENHA","device_name":"Insomnia A"}`: 200, com `token_type`, `access_token`, `expires_at` oito horas após emissão e `user` sem senha. Email em maiúsculas também deve funcionar para o usuário cadastrado em minúsculas.
+2. Email desconhecido ou senha incorreta: 401 com `Credenciais inválidas.`, sem token. Email inválido, senha ausente ou nome de dispositivo acima de 100 caracteres: 422.
+3. GET `/api/auth/me` usando o token A: 200 com usuário, hotéis vinculados e perfis. Crie outro token pelo login com `device_name: Insomnia B`.
+4. POST `/api/auth/logout` com o token A: 200. GET `/api/auth/me` com A passa a retornar 401; com B continua 200. O logout não revoga todas as sessões do usuário.
+5. Cinco tentativas de login para o mesmo email/IP em um minuto são permitidas; a próxima retorna 429 com `Retry-After`. Aguarde o prazo para continuar. Tokens expirados devem retornar 401 (a suíte automatizada cobre esse caso sem esperar oito horas).
+
+O Request valida os campos, o service verifica a senha e define a validade, o repository consulta/cria/revoga tokens e o controller monta as respostas. O middleware Sanctum e os limitadores continuam protegendo as rotas.
+
 ## Regressão da separação Request / Service / Repository de reservas
 
 Reconstrua a imagem Docker antes de testar: `docker compose --env-file .env.docker up -d --build`. Use token manager e uma unidade de teste disponível; não há migration nova.

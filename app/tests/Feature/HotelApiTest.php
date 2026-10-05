@@ -54,6 +54,26 @@ class HotelApiTest extends TestCase
         $this->getJson('/api/auth/me', $headers)->assertUnauthorized();
     }
 
+    public function test_login_expiry_and_logout_only_revokes_the_current_device(): void
+    {
+        $this->freezeTime();
+        $user = User::factory()->create(['email' => 'devices@example.com', 'password' => 'UmaSenhaSegura123']);
+        $data = ['email' => 'DEVICES@EXAMPLE.COM', 'password' => 'UmaSenhaSegura123'];
+        $first = $this->postJson('/api/auth/login', $data + ['device_name' => 'Primeiro'])
+            ->assertOk()->assertJsonPath('expires_at', now()->addHours(8)->toIso8601String())->json('access_token');
+        $second = $this->postJson('/api/auth/login', $data + ['device_name' => 'Segundo'])
+            ->assertOk()->json('access_token');
+        $this->assertDatabaseCount('personal_access_tokens', 2);
+        $firstHeaders = ['Authorization' => 'Bearer '.$first];
+        $secondHeaders = ['Authorization' => 'Bearer '.$second];
+        $this->postJson('/api/auth/logout', [], $firstHeaders)->assertOk();
+        $this->assertDatabaseCount('personal_access_tokens', 1);
+        app('auth')->forgetGuards();
+        $this->getJson('/api/auth/me', $firstHeaders)->assertUnauthorized();
+        app('auth')->forgetGuards();
+        $this->getJson('/api/auth/me', $secondHeaders)->assertOk()->assertJsonPath('id', $user->id);
+    }
+
     public function test_expired_token_is_rejected(): void
     {
         $user = User::factory()->create();
