@@ -3,7 +3,7 @@
     "info": {
         "title": "API Hoteleira Foco",
         "version": "1.0.0",
-        "description": "API Laravel do desafio Foco. Faça login e informe access_token em Authorize. Acesso por hotel: viewer consulta; manager consulta e modifica. Sem vínculo, listagens vazias e acesso direto negado (403). Transferir quarto exige manager nos dois hotéis. Token válido por oito horas. Try it out executa operações reais. Importação XML é comando administrativo Artisan."
+        "description": "API REST para gestão de hotéis, quartos, reservas, cupons e pagamentos.\n\n### Como começar\n1. Abra **Autenticação → Login** e informe seu email e senha.\n2. Copie o valor de `access_token` retornado.\n3. Clique em **Authorize** e cole somente o token, sem escrever `Bearer`.\n\nO token é válido por **oito horas**. Use **Consultar usuário** para conferir seus hotéis e perfis de acesso.\n\n### Permissões por hotel\n| Perfil | Acesso |\n| --- | --- |\n| `viewer` | Consulta hotéis, quartos, categorias, disponibilidade, reservas e pagamentos. |\n| `manager` | Também gerencia quartos e cupons, cadastra categorias, cria reservas e registra pagamentos. |\n\nSem vínculo com um hotel, suas listagens ficam vazias e o acesso direto aos registros é negado com **403**. Transferir um quarto exige perfil `manager` nos hotéis de origem e destino.\n\n### Uso da documentação\n**Try it out** executa operações reais no banco. Utilize dados de teste.\n\nA importação XML é uma operação administrativa executada pelo comando `php artisan hotels:import`, fora da API."
     },
     "servers": [
         {
