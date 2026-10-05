@@ -122,12 +122,38 @@ class RoomCategoryTest extends TestCase
         $this->postJson('/api/reservations', $this->payload($category->id))->assertForbidden();
     }
 
+    public function test_grouped_availability_requires_a_single_room_free_for_the_entire_period(): void
+    {
+        $hotel = $this->hotel();
+        $category = $this->postJson('/api/hotels/'.$hotel->id.'/categories', ['name' => 'Standard'])->assertCreated()->json('id');
+        $this->postJson('/api/hotels/'.$hotel->id.'/categories', ['name' => 'Vazia'])->assertCreated();
+        $first = Room::create(['hotel_id' => $hotel->id, 'name' => '101', 'room_category_id' => $category]);
+        $second = Room::create(['hotel_id' => $hotel->id, 'name' => '102', 'room_category_id' => $category]);
+        $data = $this->payload($category);
+        unset($data['room_category_id']);
+        $data['room_id'] = $first->id;
+        $this->postJson('/api/reservations', $data)->assertCreated();
+        $data['room_id'] = $second->id;
+        $data['check_in'] = '2028-05-11';
+        $data['check_out'] = '2028-05-12';
+        $data['dailies'][0]['date'] = '2028-05-11';
+        $this->postJson('/api/reservations', $data)->assertCreated();
+
+        $url = '/api/hotels/'.$hotel->id.'/categories/availability';
+        $this->getJson($url.'?check_in=2028-05-10&check_out=2028-05-12')
+            ->assertOk()->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.rooms_count', 2)->assertJsonPath('data.0.available_count', 0)
+            ->assertJsonPath('data.1.rooms_count', 0)->assertJsonPath('data.1.available_count', 0);
+        $this->getJson($url.'?check_in=2028-05-12&check_out=2028-05-13')
+            ->assertOk()->assertJsonPath('data.0.available_count', 2);
+    }
+
     public function test_dates_and_authentication(): void
     {
         $this->getJson('/api/hotels/1/categories')->assertUnauthorized();
         $hotel = $this->hotel();
         $url = '/api/hotels/'.$hotel->id.'/categories/availability';
-        foreach (['', '?check_in=wrong&check_out=2028-01-01', '?check_in=2028-01-01&check_out=2028-01-01', '?check_in=2028-01-01&check_out=2030-01-01'] as $query) {
+        foreach (['', '?check_in=wrong&check_out=2028-01-01', '?check_in=2028-01-01&check_out=2028-01-01', '?check_in=2028-01-01&check_out=2030-01-01', '?check_in[]=2028-01-01&check_out=2028-01-02', '?check_in=2028-01-01&check_out[]=2028-01-02'] as $query) {
             $this->getJson($url.$query)->assertUnprocessable();
         }
     }

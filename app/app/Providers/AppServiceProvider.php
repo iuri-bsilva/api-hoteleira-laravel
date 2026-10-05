@@ -4,15 +4,19 @@ namespace App\Providers;
 
 use App\Interfaces\Repositories\CouponRepositoryInterface;
 use App\Interfaces\Repositories\PaymentRepositoryInterface;
+use App\Interfaces\Repositories\RoomCategoryRepositoryInterface;
 use App\Interfaces\Repositories\RoomRepositoryInterface;
 use App\Interfaces\Services\CouponServiceInterface;
 use App\Interfaces\Services\PaymentServiceInterface;
+use App\Interfaces\Services\RoomCategoryServiceInterface;
 use App\Interfaces\Services\RoomServiceInterface;
 use App\Repositories\CouponRepository;
 use App\Repositories\PaymentRepository;
+use App\Repositories\RoomCategoryRepository;
 use App\Repositories\RoomRepository;
 use App\Services\CouponService;
 use App\Services\PaymentService;
+use App\Services\RoomCategoryService;
 use App\Services\RoomService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -26,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->bind(RoomCategoryRepositoryInterface::class, RoomCategoryRepository::class);
+        $this->app->bind(RoomCategoryServiceInterface::class, RoomCategoryService::class);
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
         $this->app->bind(RoomRepositoryInterface::class, RoomRepository::class);

@@ -65,7 +65,7 @@ Na raiz, execute `docker compose --env-file .env.docker --profile integration ru
 
 Cinco testes, com 34 verificações, passaram em 05/10/2026: reserva direta concorrente, categoria competindo com reserva direta pela última unidade, duas reservas da mesma categoria em unidades distintas, pagamentos concorrentes acima do saldo e reenvio concorrente da mesma chave. Dois processos PHP independentes usam barreira de início e mantêm brevemente o primeiro bloqueio real da aplicação para exercitar a sobreposição. Cada processo percorre o kernel HTTP com token de teste. O roteiro manual permanece disponível para repetir cenários com Insomnia/Swagger.
 
-Depois dos testes, remova apenas o serviço temporário: `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. Não use `down -v`, pois ele poderia remover os volumes da aplicação. A suíte normal tem 81 testes e 503 verificações em SQLite em memória, sem executar estes cinco casos automaticamente.
+Depois dos testes, remova apenas o serviço temporário: `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. Não use `down -v`, pois ele poderia remover os volumes da aplicação. A suíte normal tem 82 testes e 517 verificações em SQLite em memória, sem executar estes cinco casos automaticamente.
 
 Na pasta `app`, após `composer install`, execute `php artisan test`. Os testes de exemplo foram substituídos por casos de autenticação, permissões por hotel, CRUD, reservas/valores/limites de disponibilidade e importação XML com rollback e idempotência. `phpunit.xml` força SQLite `:memory:` e a classe base rejeita outra configuração antes de executar migrations. Não utiliza o banco SQLite local nem o MySQL dos containers. O canal audit é desabilitado na suíte para não misturar seus registros manuais.
 
@@ -258,7 +258,13 @@ Atualização e exclusão preservam a transação e o bloqueio de linha, com nov
 
 `StoreCouponRequest` normaliza o código, valida os campos e sua unicidade por hotel; `UpdateCouponRequest` aceita somente `active` e confere o vínculo hotel/cupom antes da permissão. `CouponController` delega a `CouponServiceInterface`. O serviço verifica acesso manager, limite percentual e ordem das datas de validade, trata duplicidade e coordena a transação de ativação/desativação. `CouponRepository` concentra as consultas Eloquent, a gravação e o bloqueio de linha. Os contratos estão registrados em `AppServiceProvider`.
 
-As rotas, respostas e regras foram preservadas: listagem também exige manager, cupom de outro hotel na rota retorna 404, cadastro retorna 201 e PATCH altera apenas a ativação. A aplicação do desconto na reserva continua em `ReservationService`; esta etapa separa a gestão dos cupons. Reservas, categorias e autenticação ainda não foram migradas integralmente para esse padrão.
+As rotas, respostas e regras foram preservadas: listagem também exige manager, cupom de outro hotel na rota retorna 404, cadastro retorna 201 e PATCH altera apenas a ativação. A aplicação do desconto na reserva continua em `ReservationService`; esta etapa separa a gestão dos cupons.
+
+### Separação de responsabilidades em categorias
+
+`StoreRoomCategoryRequest` valida nome único no hotel e exige manager. `CategoryAvailabilityRequest` verifica acesso ao hotel e reutiliza `StayPeriodRequest`, também usado na disponibilidade de quartos, para validar datas e limite de 366 noites. `RoomCategoryController` delega ao contrato `RoomCategoryServiceInterface` e monta respostas e links de paginação. O serviço verifica permissões e trata nomes duplicados; `RoomCategoryRepository` concentra cadastro e consultas com `rooms_count` e `available_count`.
+
+Viewer pode consultar, manager pode cadastrar. Categorias vazias permanecem na resposta com contagem zero; a disponibilidade exige que cada quarto esteja livre durante toda a estadia, sem somar noites livres de unidades diferentes. Consultas continuam informativas: a alocação e os bloqueios da criação da reserva permanecem em `ReservationService`. Não foram adicionadas rotas de alteração/exclusão de categorias. Reservas e autenticação ainda não foram migradas integralmente para esse padrão.
 
 Separação: controllers recebem HTTP, `ReservationService` centraliza regras usadas pela API e importação, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 

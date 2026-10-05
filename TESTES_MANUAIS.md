@@ -1,5 +1,18 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de categorias
+
+Atualize a imagem Docker com `docker compose --env-file .env.docker up -d --build`. Use hotel e quartos de teste e substitua `HOTEL` pelo ID interno. Não há migration nova.
+
+1. Com manager, POST `/api/hotels/HOTEL/categories` com `{"name":"Categoria de regressão"}`: 201. Mesmo nome no mesmo hotel: 422 em `name`. Nome igual em outro hotel com acesso manager continua permitido.
+2. GET na mesma rota: 200, categorias ordenadas por ID e paginadas em 20, com `rooms_count`. Categoria recém-criada tem zero quartos.
+3. Vincule dois quartos físicos à categoria por PATCH `/api/rooms/ID`. GET `/api/hotels/HOTEL/categories/availability?check_in=2029-01-10&check_out=2029-01-12`: `rooms_count` igual a 2 e `available_count` igual a 2 se ambos estiverem livres.
+4. Reserve o primeiro quarto somente de 10 a 11 e o segundo somente de 11 a 12. Consulta de 10 a 12 deve retornar `available_count: 0`: não há uma unidade livre para as duas noites. Categorias vazias também devem aparecer com zero. Consulta de 12 a 13 retorna as duas unidades livres se não houver outras reservas.
+5. Datas ausentes, inválidas, saída igual/anterior à entrada, arrays (`check_in[]=2029-01-10`) ou período acima de 366 noites: 422 JSON. Links da paginação preservam os filtros.
+6. Viewer consulta categorias e disponibilidade, mas POST retorna 403. Usuário sem vínculo ao hotel: 403. Sem token: 401.
+
+No código, Requests validam entrada, service verifica acesso e trata duplicidade, repository consulta/persiste, e controller monta a resposta. A criação da reserva por categoria continua sendo responsabilidade do serviço de reservas, com suas transações e bloqueios existentes.
+
 ## Regressão da separação Request / Service / Repository de cupons
 
 No Docker, reconstrua a imagem com `docker compose --env-file .env.docker up -d --build`. Use token manager do hotel e substitua `HOTEL` e `CUPOM` pelos IDs internos. Não há migration nova.
