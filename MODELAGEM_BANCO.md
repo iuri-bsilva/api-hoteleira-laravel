@@ -1,6 +1,6 @@
 # Modelagem do banco de dados
 
-Modelo físico MySQL conferido em 05/10/2026: **19 tabelas, 120 colunas e 10 chaves estrangeiras**. A comparação do arquivo Workbench com o schema `foco` confirmou os nomes dos campos, tipos equivalentes, nulabilidade e relações com suas regras de exclusão. O enunciado original está em `Desafio.md`; as migrations em `app/database/migrations` são a fonte executável da estrutura.
+Modelo físico MySQL conferido em 05/10/2026: **19 tabelas, 120 colunas e 10 chaves estrangeiras**. A comparação do arquivo Workbench com o schema `foco` confirmou os nomes dos campos, tipos equivalentes, nulabilidade e relações com suas regras de exclusão. O enunciado original está em `DESAFIO.md`; as migrations em `app/database/migrations` são a fonte executável da estrutura.
 
 ## Arquivos da modelagem
 

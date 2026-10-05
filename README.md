@@ -2,7 +2,20 @@
 
 API REST em Laravel 12 e PHP 8.2+. Aplicação na pasta `app`. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais e suíte automatizada PHPUnit.
 
-Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO.md](PROGRESSO.md). Enunciado original preservado em `Desafio.md`.
+Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO_DESAFIO.md](PROGRESSO_DESAFIO.md). Enunciado original preservado em `DESAFIO.md`.
+
+## Documentação
+
+Os arquivos Markdown usam nomes em maiúsculas e palavras separadas por `_`. `README.md` é o documento principal do projeto.
+
+| Arquivo | Conteúdo |
+|---|---|
+| [DESAFIO.md](DESAFIO.md) | Enunciado original. |
+| [PROGRESSO_DESAFIO.md](PROGRESSO_DESAFIO.md) | Checklist de implementação e limites. |
+| [GUIA_DOCKER.md](GUIA_DOCKER.md) | Configuração e execução do ambiente Docker. |
+| [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md) | Modelo Workbench, diagrama e regras do banco. |
+| [TESTES_MANUAIS.md](TESTES_MANUAIS.md) | Roteiro de testes, JSONs e resultados esperados. |
+| [README_LARAVEL.md](app/README_LARAVEL.md) | Apresentação original do framework Laravel. |
 
 ## Executar no Windows
 
@@ -22,7 +35,7 @@ Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run 
 
 ## Executar a aplicação no Windows
 
-Alternativa com Laravel, MySQL e scheduler em containers: veja [DOCKER.md](DOCKER.md). Esse ambiente usa a porta 8080 e banco independente do SQLite.
+Alternativa com Laravel, MySQL e scheduler em containers: veja [GUIA_DOCKER.md](GUIA_DOCKER.md). Esse ambiente usa a porta 8080 e banco independente do SQLite.
 
 ```powershell
 cd C:\PHP\Teste_Foco\app
@@ -166,7 +179,7 @@ Logs: `app/storage/logs/laravel.log` e, nas execuções agendadas, `app/storage/
 
 ## Modelagem
 
-Modelo completo revisado e explicações em [MODELAGEM.md](MODELAGEM.md). Arquivo editável do Workbench: [DER FOCO.mwb](<app/DER FOCO.mwb>); exportação visual: [DER FOCO.png](<app/DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
+Modelo completo revisado e explicações em [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md). Arquivo editável do Workbench: [DER FOCO.mwb](<app/DER FOCO.mwb>); exportação visual: [DER FOCO.png](<app/DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
 
 ## Logs da API
 

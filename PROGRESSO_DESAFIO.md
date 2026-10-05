@@ -1,12 +1,12 @@
 # Progresso do desafio
 
-Atualizado em 05/10/2026. O enunciado original está preservado em `Desafio.md`.
+Atualizado em 05/10/2026. O enunciado original está preservado em `DESAFIO.md`.
 
 ## Requisitos
 
 - [x] Documentação de execução, importação, agendamento e uso da API.
 - [x] Modelagem baseada nos XMLs, com migrations versionadas.
-- [x] Modelo Workbench e exportação PNG revisados: 19 tabelas, 120 campos e 10 chaves estrangeiras. Consulte `MODELAGEM.md`.
+- [x] Modelo Workbench e exportação PNG revisados: 19 tabelas, 120 campos e 10 chaves estrangeiras. Consulte `MODELAGEM_BANCO.md`.
 - [x] Comando Laravel para importar XML, com transação e idempotência.
 - [x] Agendamento da importação no scheduler; Docker inclui processo dedicado.
 - [x] CRUD de quartos por API REST.
@@ -43,4 +43,4 @@ Histórico local organizado por escopo com mensagens `feat:`, `build:`, `test:` 
 - Cada quarto representa uma unidade física; o estoque da categoria depende dos quartos vinculados.
 - O scheduler nativo exige configuração no sistema operacional; o Docker já executa `schedule:work`.
 
-Documentação: `README.md`, `DOCKER.md` e `TESTES_MANUAIS.md`.
+Documentação: `README.md`, `GUIA_DOCKER.md` e `TESTES_MANUAIS.md`.
