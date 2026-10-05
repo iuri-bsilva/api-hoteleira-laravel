@@ -33,7 +33,14 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `DESAFIO.md`.
 
 ## Versionamento
 
-Histórico local organizado por escopo com mensagens `feat:`, `build:`, `test:` e `docs:`. Bancos locais, credenciais, dependências e logs permanecem fora dos commits. Não há publicação em repositório remoto nesta etapa.
+Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `docs:` e enviado ao repositório `iuri-bsilva/api-hoteleira-laravel`. Bancos locais, credenciais, dependências e logs permanecem fora dos commits.
+
+## Refatoração de arquitetura
+
+- [x] Pagamentos separados em Form Request, controller, service e repository, com interfaces registradas no container Laravel e DTO de resultado.
+- [x] Controller de pagamentos concentra apenas coordenação e resposta HTTP; saldo, idempotência e transação ficam no service, consultas e gravação no repository.
+- [x] Regressão após a refatoração: 79 testes funcionais / 487 verificações em SQLite e 5 testes concorrentes / 34 verificações no MySQL temporário passaram.
+- Os demais módulos ainda não foram migrados para esse padrão. O roteiro de regressão está em `TESTES_MANUAIS.md`.
 
 ## Limites e verificações manuais
 

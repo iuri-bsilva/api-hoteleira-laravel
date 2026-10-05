@@ -1,5 +1,19 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de pagamentos
+
+Use uma reserva de teste com saldo conhecido e token manager do hotel. Substitua `ID` pelo ID interno da reserva. A refatoração não exige migrations ou alteração dos JSONs. No Docker, atualize a imagem com `docker compose --env-file .env.docker up -d --build` antes de repetir estes passos.
+
+1. GET `/api/reservations/ID/payments`: 200 com `total`, `paid`, `balance`, `status` e `payments` consistentes com os registros existentes.
+2. POST na mesma rota com `{"method":1,"value":"0.01","idempotency_key":"123e4567-e89b-42d3-a456-426614174abc"}`: 201, se houver saldo e a chave ainda não tiver sido usada. O saldo deve diminuir 0.01.
+3. Repita o mesmo corpo, inclusive usando a UUID em maiúsculas: 200, mesmo `payment.id`, sem novo recebimento.
+4. Mantenha a chave e mude `value` para `0.02`: 409, sem alteração do saldo.
+5. Use uma nova UUID e valor acima do saldo: 422 no campo `value`, sem gravação. UUID inválida ou valor com três casas decimais também retorna 422.
+6. Repita com token viewer: GET 200, POST 403. Sem token: 401. Reserva de hotel sem vínculo: 403. ID inexistente: 404.
+7. Para concorrência, repita o perfil integration descrito abaixo: duas operações acima do saldo não podem ser aprovadas juntas; reenvios concorrentes da mesma chave devem gerar apenas um pagamento.
+
+Ao revisar o código, confirme que o controller não contém queries, cálculo financeiro ou `DB::transaction`; esses passos ficam no service/repository. As transações e os bloqueios devem continuar abrangendo leitura, verificação e gravação juntos.
+
 ## Instalação em ambiente novo
 
 Validação realizada em 05/10/2026: 24 verificações funcionais passaram em cópia limpa do commit `09642c2`, sem usar o banco existente. Para repetir:

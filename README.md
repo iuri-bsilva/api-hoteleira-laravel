@@ -242,6 +242,12 @@ Migrations: `app/database/migrations/2026_10_03_000001_create_hotel_tables.php`.
 
 ## Desenvolvimento e escopo
 
+### Separação de responsabilidades em pagamentos
+
+O módulo de pagamentos adota o fluxo `StorePaymentRequest → PaymentController → PaymentServiceInterface → PaymentService → PaymentRepositoryInterface → PaymentRepository`. O Request valida e normaliza a entrada e verifica o acesso antes da validação. O controller monta a resposta JSON e escolhe 201 (novo recebimento) ou 200 (reenvio). O serviço coordena permissões, saldo, idempotência e a transação inteira; o repository concentra as consultas Eloquent e a gravação. Os contratos ficam em `app/Interfaces`, as implementações em `app/Services` e `app/Repositories`, com bindings em `AppServiceProvider`.
+
+`PaymentResult` transporta pagamento, resumo e indicação de criação, sem construir uma resposta HTTP. Os bloqueios continuam na ordem quarto → reserva, dentro da mesma transação, e a permissão é conferida novamente após bloquear o quarto. Os cálculos em centavos ainda reutilizam os métodos existentes de `ReservationService`. Essa primeira refatoração abrange pagamentos; os demais módulos ainda mantêm a organização anterior e podem ser migrados gradualmente. Rotas, JSONs, códigos HTTP e estrutura do banco foram preservados.
+
 Separação: controllers recebem HTTP, `ReservationService` centraliza regras usadas pela API e importação, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 
 Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `app/public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
