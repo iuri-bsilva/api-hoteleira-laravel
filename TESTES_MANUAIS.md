@@ -1,5 +1,19 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de reservas
+
+Reconstrua a imagem Docker antes de testar: `docker compose --env-file .env.docker up -d --build`. Use token manager e uma unidade de teste disponível; não há migration nova.
+
+1. POST `/api/reservations` com quarto, hóspedes e uma diária por noite: 201, retornando quarto/hotel, hóspedes, diárias e pagamentos. GET da reserva e listagem mantêm detalhes e filtro pelos hotéis vinculados.
+2. Informe `subtotal` e `total` incorretos no corpo: devem ser ignorados. Com diárias somando 250.00, desconto 30.00 e taxa 10.00, o total é 230.00. Cupom com desconto manual, diária faltante/duplicada e pagamento acima do total retornam 422 sem dados parciais.
+3. Envie `check_in` ou `check_out` como array em vez de string: 422 JSON. Datas iguais/invertidas, período acima de 366 noites e IDs inválidos também devem ser rejeitados.
+4. Repita a reserva no mesmo quarto/período: 409. Reserva adjacente, iniciando no check-out anterior, continua permitida. Reserva por categoria deve escolher a unidade livre de menor ID; categoria esgotada retorna 409.
+5. Viewer não cria reservas; usuário sem acesso ao hotel não consulta o registro nem cria para seus quartos. Listagem deve mostrar apenas os hotéis vinculados.
+6. Em ambiente descartável, importe os XMLs corrigidos duas vezes: IDs e contagens permanecem estáveis. Registre pagamento com chave em uma reserva importada e reimporte: pagamento da API permanece. XML original inválido ou soma de pagamentos acima do total deve reverter o lote inteiro. Use os passos detalhados das seções de importação, sem alterar dados em uso.
+7. Execute o perfil integration: duas reservas concorrentes para a última unidade não podem ser aprovadas juntas; reservas por categoria com duas unidades devem alocar quartos distintos. Pagamentos concorrentes e reenvios idempotentes continuam protegidos.
+
+O controller delega à interface do serviço. O serviço coordena regras e transações; o repository consulta/persiste. `ReservationDataValidator` mantém uma fonte de regras para API e importação XML, e o comando XML continua validando o lote completo.
+
 ## Regressão da separação Request / Service / Repository de categorias
 
 Atualize a imagem Docker com `docker compose --env-file .env.docker up -d --build`. Use hotel e quartos de teste e substitua `HOTEL` pelo ID interno. Não há migration nova.

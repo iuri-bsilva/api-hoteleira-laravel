@@ -207,6 +207,8 @@ class HotelApiTest extends TestCase
             'missing guest' => [['guests' => []], 'guests'],
             'invalid room' => [['room_id' => 999999], 'room_id'],
             'equal dates' => [['check_out' => '2027-01-10'], 'check_out'],
+            'array check in' => [['check_in' => ['2027-01-10']], 'check_in'],
+            'array check out' => [['check_out' => ['2027-01-12']], 'check_out'],
             'negative daily' => [['dailies' => [['date' => '2027-01-10', 'value' => '-1'], ['date' => '2027-01-11', 'value' => '150']]], 'dailies.0.value'],
             'precision' => [['dailies' => [['date' => '2027-01-10', 'value' => '100.123'], ['date' => '2027-01-11', 'value' => '150']]], 'dailies.0.value'],
             'missing night' => [['dailies' => [['date' => '2027-01-10', 'value' => '100']]], 'dailies'],

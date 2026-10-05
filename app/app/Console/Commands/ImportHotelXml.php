@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
+use App\Interfaces\Services\ReservationServiceInterface;
 use App\Models\Hotel;
 use App\Models\Room;
-use App\Services\ReservationService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +17,7 @@ class ImportHotelXml extends Command
 
     protected $description = 'Importa XMLs em uma transação; rejeita o lote se houver dados inválidos';
 
-    public function handle(ReservationService $service): int
+    public function handle(ReservationServiceInterface $service): int
     {
         $path = $this->option('path') ?: database_path('xml');
         try {

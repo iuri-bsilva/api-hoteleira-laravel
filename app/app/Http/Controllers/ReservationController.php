@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreReservationRequest;
+use App\Interfaces\Services\ReservationServiceInterface;
 use App\Models\Reservation;
-use App\Services\ReservationService;
 use Illuminate\Http\Request;
 
 class ReservationController extends Controller
 {
-    public function store(Request $request, ReservationService $service)
+    public function __construct(private readonly ReservationServiceInterface $reservations) {}
+
+    public function store(StoreReservationRequest $request)
     {
-        return response()->json($service->save($request->all(), user: $request->user()), 201);
+        return response()->json($this->reservations->save($request->validated(), user: $request->user()), 201);
     }
 
     public function index(Request $request)
     {
-        return Reservation::whereHas('room', fn ($query) => $query->whereIn('hotel_id', $request->user()->hotelIds()))->with('room.hotel', 'guests', 'dailies', 'payments')->paginate(20);
+        return $this->reservations->list($request->user());
     }
 
     public function show(Request $request, Reservation $reservation)
     {
-        $request->user()->requireHotelAccess($reservation->room->hotel_id);
-
-        return $reservation->load('room.hotel', 'guests', 'dailies', 'payments');
+        return $this->reservations->show($request->user(), $reservation);
     }
 }

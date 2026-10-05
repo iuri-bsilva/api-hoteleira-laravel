@@ -46,7 +46,10 @@ Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `doc
 - [x] Regressão de cupons: 81 testes funcionais / 503 verificações passaram, incluindo a proteção dos campos comerciais no PATCH de ativação.
 - [x] Categorias e disponibilidade agrupada separadas em Requests, controller, service e repository, com interfaces e validação compartilhada de período com quartos.
 - [x] Regressão de categorias: 82 testes funcionais / 517 verificações passaram, incluindo disponibilidade para a estadia inteira e datas enviadas como arrays.
-- Reservas e autenticação ainda não foram migradas integralmente para esse padrão. O roteiro de regressão está em `TESTES_MANUAIS.md`.
+- [x] Reservas separadas em Request, service e repository com interfaces; validação compartilhada com XML e persistência transacional preservando pagamentos da API.
+- [x] Regressão funcional de reservas: 84 testes / 531 verificações passaram, incluindo rejeição de datas em arrays sem gravação parcial.
+- [x] Regressão concorrente após separar as consultas de reservas: 5 testes MySQL / 34 verificações passaram.
+- A autenticação ainda não foi migrada integralmente para esse padrão. O roteiro de regressão está em `TESTES_MANUAIS.md`.
 
 ## Limites e verificações manuais
 

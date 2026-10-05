@@ -5,6 +5,7 @@ namespace App\Services;
 use App\DTOs\PaymentResult;
 use App\Interfaces\Repositories\PaymentRepositoryInterface;
 use App\Interfaces\Services\PaymentServiceInterface;
+use App\Interfaces\Services\ReservationServiceInterface;
 use App\Models\Reservation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class PaymentService implements PaymentServiceInterface
 {
     public function __construct(
         private readonly PaymentRepositoryInterface $payments,
-        private readonly ReservationService $money,
+        private readonly ReservationServiceInterface $money,
     ) {}
 
     public function summary(Reservation $reservation, User $user): array
