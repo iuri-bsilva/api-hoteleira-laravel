@@ -139,6 +139,23 @@ class ConcurrencyTest extends TestCase
         $this->assertSame('80.00', $reservation->payments()->firstOrFail()->value);
     }
 
+    public function test_simultaneous_payments_include_late_interest_without_overpayment(): void
+    {
+        [$category, $rooms, $token] = $this->fixture();
+        $due = now()->subDays(2)->startOfDay();
+        $reservation = new Reservation;
+        $reservation->forceFill(['room_id' => $rooms[0]->id, 'check_in' => '2028-08-10', 'check_out' => '2028-08-11',
+            'total' => '100.00', 'due_date' => $due->toDateString(), 'daily_interest_rate' => '1.00', 'created_at' => $due])->save();
+        $one = ['method' => 1, 'value' => '102.00', 'idempotency_key' => '123e4567-e89b-42d3-a456-426614174000'];
+        $two = array_replace($one, ['idempotency_key' => '123e4567-e89b-42d3-a456-426614174001']);
+        $results = $this->race('/api/reservations/'.$reservation->id.'/payments', [$one, $two], $token);
+        $this->assertSame([201, 422], $this->statuses($results));
+        $success = collect($results)->firstWhere('status', 201);
+        $this->assertSame('102.00', $success['body']['summary']['total_due']);
+        $this->assertSame('0.00', $success['body']['summary']['balance']);
+        $this->assertDatabaseCount('payments', 1);
+    }
+
     public function test_simultaneous_payment_retries_create_one_record(): void
     {
         [$category, $rooms, $token] = $this->fixture();

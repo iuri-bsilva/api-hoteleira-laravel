@@ -693,7 +693,7 @@
                 ],
                 "operationId": "createReservation",
                 "summary": "Criar reserva",
-                "description": "Cada quarto representa uma unidade física. Impede sobreposição; check-out pode coincidir com entrada de outra reserva. Datas históricas são aceitas. Total calculado pelas diárias. IDs externos e total enviados pelo cliente são ignorados. Desconto e taxa opcionais em valores fixos: total = subtotal - discount + service_fee. Sem campos de ajuste, ambos são zero. Cupons fixos e percentuais por hotel disponíveis. coupon_code aplica desconto sobre o subtotal das diárias, antes da taxa, limitado ao subtotal. Percentuais arredondam ao centavo mais próximo com empate para cima. Não enviar discount junto ao cupom. Validade inclusive pela data de criação, no fuso da aplicação (UTC por padrão), e não pela data do check-in. Cupons são reutilizáveis, sem limite de usos. Envie somente room_id ou room_category_id. Categoria aloca uma unidade física livre para todo o período, com menor ID; retorna room_id escolhido. Sem unidade livre, 409. Regras de cupons, taxas e pagamentos continuam iguais.",
+                "description": "Cada quarto representa uma unidade física. Impede sobreposição; check-out pode coincidir com entrada de outra reserva. Datas históricas são aceitas. Total calculado pelas diárias. IDs externos e total enviados pelo cliente são ignorados. Desconto e taxa opcionais em valores fixos: total = subtotal - discount + service_fee. Sem campos de ajuste, ambos são zero. Cupons fixos e percentuais por hotel disponíveis. coupon_code aplica desconto sobre o subtotal das diárias, antes da taxa, limitado ao subtotal. Percentuais arredondam ao centavo mais próximo com empate para cima. Não enviar discount junto ao cupom. Validade inclusive pela data de criação, no fuso da aplicação (UTC por padrão), e não pela data do check-in. Cupons são reutilizáveis, sem limite de usos. Envie somente room_id ou room_category_id. Categoria aloca uma unidade física livre para todo o período, com menor ID; retorna room_id escolhido. Sem unidade livre, 409. Regras de cupons, taxas e pagamentos continuam iguais. Juros opcionais: informar due_date e daily_interest_rate juntos. O percentual é diário e aplicado somente ao principal pendente; consulte o total atualizado em GET /reservations/{reservation}/payments.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1507,7 +1507,7 @@
                 },
                 "operationId": "listPayments",
                 "summary": "Consultar pagamentos e saldo da reserva",
-                "description": "Viewer e manager do hotel podem consultar. paid soma todos os pagamentos; balance = total - paid. Reserva com total zero é paid."
+                "description": "Viewer e manager podem consultar. total preserva o valor original; total_due inclui juros simples diários sobre o principal pendente. balance = principal_balance + interest_balance. Pagamentos liquidam primeiro juros, depois principal. Juros calculados por dias de calendário no fuso da aplicação, desde o vencimento ou criação (o mais recente), com arredondamento ao centavo por intervalo entre pagamentos. Sem capitalização ou multa. Pagamentos iniciais/XML sem recorded_at são considerados recebidos na criação. Consulta não grava cobranças. Reserva quitada deixa de acumular juros."
             },
             "post": {
                 "tags": [
@@ -2273,6 +2273,17 @@
                         "type": "integer",
                         "minimum": 1,
                         "description": "Alternativa a room_id. Escolhe automaticamente o quarto livre com menor ID na categoria."
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true,
+                        "description": "Vencimento opcional; exige daily_interest_rate. Não cobra antes da criação da reserva."
+                    },
+                    "daily_interest_rate": {
+                        "type": "string",
+                        "example": "1.00",
+                        "description": "Percentual diário de juros simples, entre 0.01 e 100, até duas casas decimais; exige due_date. Sem ambos, juros desativados (0.00 na resposta)."
                     }
                 },
                 "required": [
@@ -2461,6 +2472,17 @@
                         "nullable": true,
                         "example": "FOCO30",
                         "description": "Código aplicado, preservado junto ao desconto na reserva."
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true,
+                        "description": "Vencimento opcional; exige daily_interest_rate. Não cobra antes da criação da reserva."
+                    },
+                    "daily_interest_rate": {
+                        "type": "string",
+                        "example": "1.00",
+                        "description": "Percentual diário de juros simples, entre 0.01 e 100, até duas casas decimais; exige due_date. Sem ambos, juros desativados (0.00 na resposta)."
                     }
                 }
             },
@@ -3009,6 +3031,37 @@
                         "items": {
                             "$ref": "#/components/schemas/Payment"
                         }
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true,
+                        "description": "Vencimento opcional; exige daily_interest_rate. Não cobra antes da criação da reserva."
+                    },
+                    "daily_interest_rate": {
+                        "type": "string",
+                        "example": "1.00",
+                        "description": "Percentual diário de juros simples, entre 0.01 e 100, até duas casas decimais; exige due_date. Sem ambos, juros desativados (0.00 na resposta)."
+                    },
+                    "principal_balance": {
+                        "type": "string",
+                        "description": "Principal ainda pendente."
+                    },
+                    "interest_total": {
+                        "type": "string",
+                        "description": "Juros acumulados, inclusive os já pagos."
+                    },
+                    "interest_balance": {
+                        "type": "string",
+                        "description": "Juros ainda pendentes."
+                    },
+                    "total_due": {
+                        "type": "string",
+                        "description": "Total original mais juros acumulados."
+                    },
+                    "overdue_days": {
+                        "type": "integer",
+                        "description": "Dias após vencimento/criação; zero após quitação."
                     }
                 }
             },

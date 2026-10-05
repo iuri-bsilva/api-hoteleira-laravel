@@ -67,7 +67,7 @@ class ReservationRepository implements ReservationRepositoryInterface
     {
         $reservation = $existing ?? new Reservation;
         $reservation->fill(array_intersect_key($attributes, array_flip(['room_id', 'check_in', 'check_out'])));
-        foreach (['external_id', 'coupon_code', 'subtotal', 'discount', 'service_fee', 'total'] as $field) {
+        foreach (['external_id', 'coupon_code', 'subtotal', 'discount', 'service_fee', 'total', 'due_date', 'daily_interest_rate'] as $field) {
             $reservation->$field = $attributes[$field];
         }
         $reservation->save();

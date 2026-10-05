@@ -101,6 +101,8 @@ class ReservationService implements ReservationServiceInterface
                 'external_id' => $externalId, 'coupon_code' => $data['coupon_code'] ?? null,
                 'subtotal' => $this->money($subtotal), 'discount' => $this->money($discount),
                 'service_fee' => $this->money($serviceFee), 'total' => $this->money($total),
+                'due_date' => $data['due_date'] ?? null,
+                'daily_interest_rate' => $data['daily_interest_rate'] ?? '0.00',
             ], $data);
         });
     }

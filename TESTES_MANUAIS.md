@@ -352,3 +352,13 @@ No Docker, base `http://127.0.0.1:8080/api`. Use Bearer token de usuário vincul
 7. A consulta não bloqueia quartos. Se outro usuário reservar após a consulta, tentar criar reserva sobreposta deve continuar retornando 409.
 
 Cobertura automatizada: `tests/Feature/AvailabilityTest.php`, usando SQLite em memória. Não representa estoque de categorias como “10 quartos Standard”; cada registro representa uma unidade física.
+## Juros simples diários
+
+1. Crie uma reserva com diária total de `100.00`, sem desconto, taxa ou pagamento inicial. Acrescente `due_date` com a data atual e `daily_interest_rate: "1.00"`.
+2. Consulte `GET /api/reservations/{id}/payments`: no vencimento, `interest_total` deve ser `0.00` e `balance`, `100.00`.
+3. Após dois dias, consulte novamente: juros `2.00`, saldo `102.00`. Para simular hoje em um banco descartável, use vencimento e `created_at` de dois dias atrás via Workbench; não altere registros reais.
+4. Registre pagamento de `52.00` com método válido e uma chave UUID nova: principal pendente `50.00`, juros pendentes `0.00`.
+5. Dois dias depois, o saldo será `51.00`: juros adicionais `1.00`. Reenvie o pagamento com a mesma chave e dados: HTTP 200, sem duplicação.
+6. Pague `51.00` usando outra chave: status `paid`, saldo zero, `total` original `100.00`, `total_due` `103.00`. Consultas posteriores não devem acrescentar juros.
+7. Tente informar apenas vencimento, apenas taxa, taxa zero, acima de 100 ou com três casas decimais: HTTP 422. Uma reserva sem ambos os campos mantém o comportamento anterior.
+8. Pagamento maior que o saldo atualizado deve retornar 422 sem gravar. Viewer pode consultar, mas não registrar recebimento.

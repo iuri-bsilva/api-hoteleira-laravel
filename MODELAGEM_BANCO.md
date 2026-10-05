@@ -66,3 +66,6 @@ erDiagram
 ## Atualizar o modelo
 
 Após novas migrations, compare ou gere um novo modelo pelo **Database → Reverse Engineer**, selecionando a conexão local e o schema `foco`. Atualize o arquivo `.mwb` e sua exportação `.png`, revise o diff das migrations e versione os artefatos juntos. O diagrama completo contém tabelas auxiliares; para apresentação do domínio, use a visão resumida acima.
+## Campos de juros por atraso
+
+A migration `2026_10_05_000001_add_late_interest_to_reservations.php` acrescenta à tabela `reservations` uma data opcional `due_date` e `daily_interest_rate DECIMAL(5,2)` com padrão zero. Os juros são calculados a partir do total e do histórico de `payments.recorded_at`, sem nova tabela ou relacionamento. O arquivo Workbench e a imagem do DER são retratos anteriores a esses dois campos; as migrations representam o esquema atual.

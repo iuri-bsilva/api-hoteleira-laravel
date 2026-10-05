@@ -48,6 +48,8 @@ class ReservationDataValidator
             'discount' => 'sometimes|required|numeric|min:0|max:9999999999.99|decimal:0,2',
             'service_fee' => 'sometimes|required|numeric|min:0|max:9999999999.99|decimal:0,2',
             'coupon_code' => 'sometimes|required|string|max:50|regex:/^[A-Z0-9_-]+$/',
+            'due_date' => 'nullable|required_with:daily_interest_rate|string|date_format:Y-m-d',
+            'daily_interest_rate' => 'nullable|required_with:due_date|numeric|min:0.01|max:100|decimal:0,2',
         ];
     }
 }

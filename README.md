@@ -297,3 +297,10 @@ Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. U
 ## Versionamento
 
 O repositório local está inicializado e conectado a `https://github.com/iuri-bsilva/api-hoteleira-laravel`. O histórico usa mensagens por escopo: `feat:` para funcionalidades, `build:` para infraestrutura, `test:` para testes, `docs:` para documentação e `fix:` para correções. Consulte `git log --oneline`. Confira `git status` e o diff antes de cada commit; `.env`, `.env.docker`, bancos locais, dependências e logs não devem ser versionados. Para novas branches, use `codex/nome-da-alteracao`.
+## Juros por atraso
+
+Ao criar uma reserva, envie opcionalmente `due_date` (data de vencimento) e `daily_interest_rate` (percentual diário, por exemplo `"1.00"` para 1% ao dia). Os dois campos devem ser informados juntos. Sem eles, não há juros. A taxa aceita valores de 0,01% a 100% com até duas casas decimais.
+
+Consulte `GET /api/reservations/{id}/payments`: `total` mantém o preço original; `total_due` inclui os juros acumulados; `principal_balance`, `interest_total`, `interest_balance` e `balance` detalham a dívida. Os juros são simples, sobre o principal pendente, por dias de calendário no fuso da aplicação. Começam após o vencimento ou a criação, o que ocorrer por último. Não há multa nem juros sobre juros. Cada intervalo entre recebimentos é arredondado ao centavo, com empate para cima.
+
+Recebimentos pagam primeiro juros vencidos e depois principal. A quitação encerra o acúmulo. Pagamentos iniciais e importados sem data de registro reduzem o principal desde a criação. O cálculo acontece na consulta ou recebimento, sem tarefa Cron adicional. A importação XML não configura juros; sua estrutura não contém esses campos.

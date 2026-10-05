@@ -17,6 +17,7 @@ class PaymentService implements PaymentServiceInterface
     public function __construct(
         private readonly PaymentRepositoryInterface $payments,
         private readonly ReservationServiceInterface $money,
+        private readonly LateInterestCalculator $interest,
     ) {}
 
     public function summary(Reservation $reservation, User $user): array
@@ -48,8 +49,8 @@ class PaymentService implements PaymentServiceInterface
                 return new PaymentResult($existing, $this->buildSummary($reservation), false);
             }
 
-            $paid = $this->payments->listForReservation($reservation)->sum(fn ($payment) => $this->money->cents($payment->value));
-            if ($paid + $this->money->cents($data['value']) > $this->money->cents($reservation->total)) {
+            $summary = $this->interest->calculate($reservation, $this->payments->listForReservation($reservation));
+            if ($this->money->cents($data['value']) > $summary['balance']) {
                 throw ValidationException::withMessages(['value' => 'Pagamento supera o saldo pendente da reserva.']);
             }
             $payment = $this->payments->create($reservation, $data);
@@ -61,11 +62,17 @@ class PaymentService implements PaymentServiceInterface
     private function buildSummary(Reservation $reservation): array
     {
         $payments = $this->payments->listForReservation($reservation);
-        $paid = $payments->sum(fn ($payment) => $this->money->cents($payment->value));
-        $balance = $this->money->cents($reservation->total) - $paid;
+        $calculation = $this->interest->calculate($reservation, $payments);
+        $paid = $calculation['paid'];
+        $balance = $calculation['balance'];
 
         return ['reservation_id' => $reservation->id, 'total' => $reservation->total,
             'paid' => $this->money->money($paid), 'balance' => $this->money->money($balance),
-            'status' => $balance === 0 ? 'paid' : ($paid === 0 ? 'unpaid' : 'partial'), 'payments' => $payments];
+            'status' => $balance === 0 ? 'paid' : ($paid === 0 ? 'unpaid' : 'partial'), 'payments' => $payments,
+            'due_date' => $reservation->due_date, 'daily_interest_rate' => $reservation->daily_interest_rate,
+            'principal_balance' => $this->money->money($calculation['principal_balance']),
+            'interest_total' => $this->money->money($calculation['interest_total']),
+            'interest_balance' => $this->money->money($calculation['interest_balance']),
+            'total_due' => $this->money->money($calculation['total_due']), 'overdue_days' => $calculation['overdue_days']];
     }
 }

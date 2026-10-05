@@ -63,7 +63,8 @@ Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `doc
 
 - A suíte normal usa SQLite em memória. A suíte separada `phpunit.mysql.xml` validou cinco cenários concorrentes no MySQL 8.4; o roteiro manual permanece para reprodução e testes adicionais.
 - Gestão de pagamentos registra recebimentos administrativos: sem gateway, estorno ou conciliação automática com XML.
-- Sem promoções automáticas, juros, limite de usos de cupons ou interface administrativa.
+- Sem promoções automáticas, limite de usos de cupons ou interface administrativa.
+- [x] Juros simples diários opcionais por reserva, sobre principal pendente; vencimento, pagamentos parciais, quitação e idempotência cobertos por PHPUnit. Suíte local: 92 testes e 608 assertions. Concorrência MySQL isolada: 6 testes e 42 assertions, incluindo quitação simultânea com juros.
 - Categorias têm cadastro e consulta; nesta etapa não têm alteração/exclusão.
 - Cada quarto representa uma unidade física; o estoque da categoria depende dos quartos vinculados.
 - O scheduler nativo exige configuração no sistema operacional; o Docker já executa `schedule:work`.
