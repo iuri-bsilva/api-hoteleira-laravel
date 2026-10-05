@@ -1,8 +1,12 @@
 # Desafio Foco — Laravel
 
-API REST em Laravel 12 e PHP 8.2+. Aplicação na pasta `app`. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais e suíte automatizada PHPUnit.
+API REST em Laravel 12 e PHP 8.2+. Aplicação Laravel na raiz do repositório. A pasta `app/` contém as classes da aplicação. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais e suíte automatizada PHPUnit.
 
 Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO_DESAFIO.md](PROGRESSO_DESAFIO.md). Enunciado original preservado em `DESAFIO.md`.
+
+## Estrutura do projeto
+
+O Laravel está diretamente na raiz: `artisan`, `composer.json`, `bootstrap/`, `config/`, `database/`, `public/`, `routes/`, `storage/` e `tests/` ficam ao lado deste README. A pasta `app/` contém somente o código PHP da aplicação (Controllers, Requests, Models, Services, Repositories e Interfaces). Os comandos locais são executados em `C:\PHP\Teste_Foco`, sem entrar em outra pasta `app`. Docker e documentos de modelagem também ficam na raiz.
 
 ## Documentação
 
@@ -15,7 +19,7 @@ Os arquivos Markdown usam nomes em maiúsculas e palavras separadas por `_`. `RE
 | [GUIA_DOCKER.md](GUIA_DOCKER.md) | Configuração e execução do ambiente Docker. |
 | [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md) | Modelo Workbench, diagrama e regras do banco. |
 | [TESTES_MANUAIS.md](TESTES_MANUAIS.md) | Roteiro de testes, JSONs e resultados esperados. |
-| [README_LARAVEL.md](app/README_LARAVEL.md) | Apresentação original do framework Laravel. |
+| [README_LARAVEL.md](README_LARAVEL.md) | Apresentação original do framework Laravel. |
 
 ## Executar no Linux
 
@@ -42,7 +46,7 @@ Substitua `SEU_EMAIL` pelo email cadastrado. Abra `http://127.0.0.1:8080/docs` e
 Tenha Git, PHP 8.2+ e Composer 2, com as extensões exigidas pelo Composer e pela aplicação, incluindo PDO SQLite, DOM/XML e mbstring. Após clonar o projeto, execute em um checkout novo:
 
 ```bash
-cd api-hoteleira-laravel/app
+cd api-hoteleira-laravel
 cp .env.example .env
 composer install
 php artisan key:generate
@@ -55,19 +59,19 @@ php artisan users:hotel SEU_EMAIL 1 manager
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-O `.env.example` utiliza SQLite; sem `DB_DATABASE` definido, o Laravel usa `database/database.sqlite`. Abra `http://127.0.0.1:8000/docs`. Mantenha o terminal do servidor aberto e, em outro terminal dentro de `app`, execute `php artisan schedule:work` para o agendamento durante o desenvolvimento, ou configure o CRON descrito na seção de importação. Para testar, execute `php artisan test`. Não precisa de Node/npm para esta API. Para validar bloqueios concorrentes no MySQL, utilize o ambiente Docker.
+O `.env.example` utiliza SQLite; sem `DB_DATABASE` definido, o Laravel usa `database/database.sqlite`. Abra `http://127.0.0.1:8000/docs`. Mantenha o terminal do servidor aberto e, em outro terminal na raiz do projeto, execute `php artisan schedule:work` para o agendamento durante o desenvolvimento, ou configure o CRON descrito na seção de importação. Para testar, execute `php artisan test`. Não precisa de Node/npm para esta API. Para validar bloqueios concorrentes no MySQL, utilize o ambiente Docker.
 
 ## Testes automatizados PHPUnit
 
 ### Concorrência real no MySQL
 
-Na raiz, execute `docker compose --env-file .env.docker --profile integration run --build --rm integration-tests`. A suíte separada `app/phpunit.mysql.xml` executa diretamente o PHPUnit e usa MySQL 8.4 em `mysql-concurrency`, banco `foco_concurrency`, sem porta publicada ou volume persistente (dados em tmpfs). Não utiliza o banco `foco` da aplicação. Uma verificação de host/banco/ambiente ocorre antes das migrations; os testes usam migrations completas por caso e revertem ao terminar. Não execute essa configuração contra um banco de uso real.
+Na raiz, execute `docker compose --env-file .env.docker --profile integration run --build --rm integration-tests`. A suíte separada `phpunit.mysql.xml` executa diretamente o PHPUnit e usa MySQL 8.4 em `mysql-concurrency`, banco `foco_concurrency`, sem porta publicada ou volume persistente (dados em tmpfs). Não utiliza o banco `foco` da aplicação. Uma verificação de host/banco/ambiente ocorre antes das migrations; os testes usam migrations completas por caso e revertem ao terminar. Não execute essa configuração contra um banco de uso real.
 
 Cinco testes, com 34 verificações, passaram em 05/10/2026: reserva direta concorrente, categoria competindo com reserva direta pela última unidade, duas reservas da mesma categoria em unidades distintas, pagamentos concorrentes acima do saldo e reenvio concorrente da mesma chave. Dois processos PHP independentes usam barreira de início e mantêm brevemente o primeiro bloqueio real da aplicação para exercitar a sobreposição. Cada processo percorre o kernel HTTP com token de teste. O roteiro manual permanece disponível para repetir cenários com Insomnia/Swagger.
 
-Depois dos testes, remova apenas o serviço temporário: `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. Não use `down -v`, pois ele poderia remover os volumes da aplicação. A suíte normal tem 85 testes e 540 verificações em SQLite em memória, sem executar estes cinco casos automaticamente.
+Depois dos testes, remova apenas o serviço temporário: `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. Não use `down -v`, pois ele poderia remover os volumes da aplicação. A suíte normal tem 85 testes e 543 verificações em SQLite em memória, sem executar estes cinco casos automaticamente.
 
-Na pasta `app`, após `composer install`, execute `php artisan test`. Os testes de exemplo foram substituídos por casos de autenticação, permissões por hotel, CRUD, reservas/valores/limites de disponibilidade e importação XML com rollback e idempotência. `phpunit.xml` força SQLite `:memory:` e a classe base rejeita outra configuração antes de executar migrations. Não utiliza o banco SQLite local nem o MySQL dos containers. O canal audit é desabilitado na suíte para não misturar seus registros manuais.
+Na raiz do projeto, após `composer install`, execute `php artisan test`. Os testes de exemplo foram substituídos por casos de autenticação, permissões por hotel, CRUD, reservas/valores/limites de disponibilidade e importação XML com rollback e idempotência. `phpunit.xml` força SQLite `:memory:` e a classe base rejeita outra configuração antes de executar migrations. Não utiliza o banco SQLite local nem o MySQL dos containers. O canal audit é desabilitado na suíte para não misturar seus registros manuais.
 
 Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run --build --rm tests`. O serviço de testes usa uma imagem própria com dependências de desenvolvimento, sem volumes do projeto e sem depender do MySQL. A aplicação normal continua instalada com `--no-dev`. A suíte normal verifica regras funcionais em SQLite; a configuração separada acima valida concorrência com bloqueio de linha no MySQL.
 
@@ -76,7 +80,7 @@ Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run 
 Alternativa com Laravel, MySQL e scheduler em containers: veja [GUIA_DOCKER.md](GUIA_DOCKER.md). Esse ambiente usa a porta 8080 e banco independente do SQLite.
 
 ```powershell
-cd C:\PHP\Teste_Foco\app
+cd C:\PHP\Teste_Foco
 composer install
 # Em outro checkout: Copy-Item .env.example .env
 # Em outro checkout: php artisan key:generate
@@ -105,11 +109,11 @@ Depois rode `php artisan config:clear`, `php artisan migrate` e `php artisan hot
 
 ### Permissões por hotel
 
-Cada usuário inicia sem acesso a hotéis; a migração não concede vínculos aos usuários existentes. Dentro de `app`, conceda acesso com `php artisan users:hotel SEU_EMAIL 1 manager`. Use o ID interno do hotel. `viewer` permite consultar hotéis, quartos e reservas; `manager` permite também cadastrar/alterar/excluir quartos e criar reservas. Para alterar perfil: `php artisan users:hotel SEU_EMAIL 1 viewer`. Para revogar: `php artisan users:hotel SEU_EMAIL 1 revoke`. As alterações valem nas próximas requisições, sem precisar emitir novo token. Repita o comando para outros hotéis se necessário.
+Cada usuário inicia sem acesso a hotéis; a migração não concede vínculos aos usuários existentes. Na raiz do projeto, conceda acesso com `php artisan users:hotel SEU_EMAIL 1 manager`. Use o ID interno do hotel. `viewer` permite consultar hotéis, quartos e reservas; `manager` permite também cadastrar/alterar/excluir quartos e criar reservas. Para alterar perfil: `php artisan users:hotel SEU_EMAIL 1 viewer`. Para revogar: `php artisan users:hotel SEU_EMAIL 1 revoke`. As alterações valem nas próximas requisições, sem precisar emitir novo token. Repita o comando para outros hotéis se necessário.
 
 As listagens são filtradas pelos hotéis vinculados. Sem vínculos, retornam 200 com data vazio. Acesso direto a um registro existente de hotel sem vínculo retorna 403 JSON. Operações de escrita exigem manager; mudança de hotel de quarto exige manager tanto na origem quanto no destino, além da regra que impede transferir quarto reservado. `GET /api/auth/me` retorna hotéis vinculados e perfil em `pivot.role`. A gestão dos vínculos ocorre exclusivamente pelo terminal administrativo; não há rota pública para conceder privilégios. A importação XML continua administrativa e não é limitada pelos vínculos de usuário.
 
-Crie seu usuário no terminal, dentro de `app`, com `php artisan users:create`. Informe nome, email e uma senha própria com pelo menos 12 caracteres, letras e números; a senha é solicitada de forma oculta e precisa ser confirmada. Não há cadastro público nem senha padrão. Faça login com `POST /api/auth/login` e JSON `{"email":"seu-email@exemplo.com","password":"SUA_SENHA","device_name":"Insomnia"}`. O retorno contém `access_token` e `expires_at`; o token expira após oito horas e é armazenado como hash no banco.
+Crie seu usuário no terminal, na raiz do projeto, com `php artisan users:create`. Informe nome, email e uma senha própria com pelo menos 12 caracteres, letras e números; a senha é solicitada de forma oculta e precisa ser confirmada. Não há cadastro público nem senha padrão. Faça login com `POST /api/auth/login` e JSON `{"email":"seu-email@exemplo.com","password":"SUA_SENHA","device_name":"Insomnia"}`. O retorno contém `access_token` e `expires_at`; o token expira após oito horas e é armazenado como hash no banco.
 
 Todas as rotas de hotéis, quartos e reservas agora exigem `Authorization: Bearer SEU_TOKEN`. No Insomnia, escolha Auth → Bearer Token e cole o token. No Swagger, clique **Authorize** e cole somente o valor de `access_token`, sem escrever Bearer. `/docs`, `/openapi.json` e o login continuam públicos. `GET /api/auth/me` consulta o usuário; `POST /api/auth/logout` revoga apenas o token usado na requisição. Após logout, faça novo login para continuar os testes.
 
@@ -121,7 +125,7 @@ Em um novo checkout, rode `composer install` e `php artisan migrate`. Em produç
 
 Com o servidor Laravel em execução, abra `http://127.0.0.1:8000/docs`. A página Swagger UI documenta as vinte e duas operações existentes, schemas, exemplos e respostas. Expanda uma operação, clique em **Try it out**, preencha os campos e clique em **Execute**. As requisições alteram o mesmo banco usado pelo Insomnia; escolha períodos livres para reservas.
 
-Contrato versionado: `app/public/openapi.json`, disponível em `http://127.0.0.1:8000/openapi.json`. Também pode ser importado no Insomnia. Ao mudar a API, atualize esse contrato. Os assets do Swagger UI 5.32.0 são carregados de um CDN e exigem internet para abrir a interface; o contrato JSON é servido localmente. A interface não envia o contrato para o validador externo do Swagger.
+Contrato versionado: `public/openapi.json`, disponível em `http://127.0.0.1:8000/openapi.json`. Também pode ser importado no Insomnia. Ao mudar a API, atualize esse contrato. Os assets do Swagger UI 5.32.0 são carregados de um CDN e exigem internet para abrir a interface; o contrato JSON é servido localmente. A interface não envia o contrato para o validador externo do Swagger.
 
 ## Rotas
 
@@ -201,23 +205,23 @@ php artisan hotels:import
 php artisan hotels:import --path="C:\PHP\Teste_Foco"
 ```
 
-A primeira opção lê `app/database/xml`; a segunda lê os arquivos originais e deve falhar na reserva 6. O original informa `2022-12-03` em uma reserva de `2022-10-01` a `2022-10-04`. Na cópia local, corrigimos apenas essa diária para `2022-10-03`, inferindo a terceira noite do período. Essa decisão deve ser confirmada com a origem dos dados em uma integração real.
+A primeira opção lê `database/xml`; a segunda lê os arquivos originais e deve falhar na reserva 6. O original informa `2022-12-03` em uma reserva de `2022-10-01` a `2022-10-04`. Na cópia local, corrigimos apenas essa diária para `2022-10-03`, inferindo a terceira noite do período. Essa decisão deve ser confirmada com a origem dos dados em uma integração real.
 
 O lote inteiro é transacional: qualquer erro reverte todas as alterações desse lote. Reexecuções atualizam pelos IDs externos e substituem hóspedes, diárias e pagamentos de origem sem duplicá-los, preservando pagamentos da nova rota. Registros ausentes nos XMLs não são excluídos. Reservas criadas pela API possuem código externo nulo e não são sobrescritas pelos XMLs. XML inválido, DTD e entidades são rejeitados; limite de 10 MB por arquivo. Não permita que fontes externas não confiáveis escolham o caminho de importação.
 
 O comando foi registrado para execução de hora em hora com proteção contra sobreposição pelo scheduler. Em Linux, adicione ao CRON (substitua o caminho):
 
 ```cron
-* * * * * cd /caminho/projeto/app && php artisan schedule:run >> storage/logs/scheduler.log 2>&1
+* * * * * cd /caminho/projeto && php artisan schedule:run >> storage/logs/scheduler.log 2>&1
 ```
 
-No Windows, configure o Agendador de Tarefas para executar a cada minuto: programa `C:\xampp\php\php.exe`, argumentos `artisan schedule:run`, iniciar em `C:\PHP\Teste_Foco\app`. Alternativa durante desenvolvimento: `php artisan schedule:work`. O agendamento do sistema operacional não foi criado automaticamente.
+No Windows, configure o Agendador de Tarefas para executar a cada minuto: programa `C:\xampp\php\php.exe`, argumentos `artisan schedule:run`, iniciar em `C:\PHP\Teste_Foco`. Alternativa durante desenvolvimento: `php artisan schedule:work`. O agendamento do sistema operacional não foi criado automaticamente.
 
-Logs: `app/storage/logs/laravel.log` e, nas execuções agendadas, `app/storage/logs/import.log`.
+Logs: `storage/logs/laravel.log` e, nas execuções agendadas, `storage/logs/import.log`.
 
 ## Modelagem
 
-Modelo completo revisado e explicações em [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md). Arquivo editável do Workbench: [DER FOCO.mwb](<app/DER FOCO.mwb>); exportação visual: [DER FOCO.png](<app/DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
+Modelo completo revisado e explicações em [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md). Arquivo editável do Workbench: [DER FOCO.mwb](<DER FOCO.mwb>); exportação visual: [DER FOCO.png](<DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
 
 ## Logs da API
 
@@ -238,7 +242,7 @@ erDiagram
     reservations ||--o{ payments : registra
 ```
 
-Migrations: `app/database/migrations/2026_10_03_000001_create_hotel_tables.php`. O hotel da reserva é derivado do quarto, evitando redundância. Hóspedes são registros de cada reserva, preservando o nome/telefone daquele momento. Exclusão de quarto reservado é bloqueada; filhos de reserva têm exclusão em cascata. O importador valida também a correspondência entre os códigos de hotel e quarto e o total informado no XML.
+Migrations: `database/migrations/2026_10_03_000001_create_hotel_tables.php`. O hotel da reserva é derivado do quarto, evitando redundância. Hóspedes são registros de cada reserva, preservando o nome/telefone daquele momento. Exclusão de quarto reservado é bloqueada; filhos de reserva têm exclusão em cascata. O importador valida também a correspondência entre os códigos de hotel e quarto e o total informado no XML.
 
 ## Desenvolvimento e escopo
 
@@ -288,7 +292,7 @@ Os sete controllers da API utilizam services por interface; `routes/api.php` ape
 
 Separação: controllers recebem HTTP, services coordenam regras e transações, repositories consultam e persistem, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 
-Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `app/public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
+Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
 
 ## Versionamento
 

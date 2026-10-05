@@ -16,7 +16,7 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `DESAFIO.md`.
 ## Diferenciais implementados
 
 - [x] Swagger / OpenAPI 3.0.
-- [x] Testes automatizados PHPUnit e roteiro manual: última suíte local com 79 testes e 487 verificações.
+- [x] Testes automatizados PHPUnit e roteiro manual: última suíte local com 85 testes e 543 verificações.
 - [x] Concorrência no MySQL isolado: 5 testes e 34 verificações, incluindo reservas, estoque e pagamentos.
 - [x] Instalação limpa do código versionado: build, migrations, importação, seed e 24 verificações funcionais, em ambiente separado. Consulte `GUIA_DOCKER.md`.
 - [x] Separação de responsabilidades entre controllers, services e models.
@@ -32,6 +32,10 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `DESAFIO.md`.
 - [x] Logs de operações com identificador de requisição.
 
 ## Versionamento
+
+O Laravel foi reorganizado para a raiz do repositório. Apenas a pasta interna `app/` do framework permanece; Dockerfile, ignores e caminhos da documentação foram ajustados. Arquivos de configuração locais e bancos foram preservados.
+
+Validação da reorganização: 85 testes locais com 543 verificações; a imagem Docker reconstruída também executou os 85 testes funcionais, e os cinco testes concorrentes MySQL passaram com 34 verificações. Aplicação e scheduler foram atualizados sem executar setup/importação e mantendo os volumes existentes. A conferência HTTP identificou e corrigiu o redirecionamento para login inexistente quando o cliente não informa Accept; a API agora retorna 401 JSON também nesse caso, com cobertura de regressão.
 
 Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `docs:` e enviado ao repositório `iuri-bsilva/api-hoteleira-laravel`. Bancos locais, credenciais, dependências e logs permanecem fora dos commits.
 

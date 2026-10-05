@@ -1,11 +1,11 @@
 # Modelagem do banco de dados
 
-Modelo físico MySQL conferido em 05/10/2026: **19 tabelas, 120 colunas e 10 chaves estrangeiras**. A comparação do arquivo Workbench com o schema `foco` confirmou os nomes dos campos, tipos equivalentes, nulabilidade e relações com suas regras de exclusão. O enunciado original está em `DESAFIO.md`; as migrations em `app/database/migrations` são a fonte executável da estrutura.
+Modelo físico MySQL conferido em 05/10/2026: **19 tabelas, 120 colunas e 10 chaves estrangeiras**. A comparação do arquivo Workbench com o schema `foco` confirmou os nomes dos campos, tipos equivalentes, nulabilidade e relações com suas regras de exclusão. O enunciado original está em `DESAFIO.md`; as migrations em `database/migrations` são a fonte executável da estrutura.
 
 ## Arquivos da modelagem
 
-- [DER FOCO.mwb](<app/DER FOCO.mwb>): modelo editável no MySQL Workbench, incluindo tabelas de negócio e tabelas auxiliares do Laravel.
-- [DER FOCO.png](<app/DER FOCO.png>): imagem exportada do modelo completo.
+- [DER FOCO.mwb](<DER FOCO.mwb>): modelo editável no MySQL Workbench, incluindo tabelas de negócio e tabelas auxiliares do Laravel.
+- [DER FOCO.png](<DER FOCO.png>): imagem exportada do modelo completo.
 - Diagrama abaixo: visão resumida das relações de negócio para facilitar a leitura.
 
 Abra o `.mwb` pelo menu **File → Open Model** no Workbench. O modelo é documentação da estrutura, não um backup dos registros. Para criar ou atualizar o banco da aplicação, execute as migrations conforme o README; não use sincronização automática do modelo como substituição às migrations.

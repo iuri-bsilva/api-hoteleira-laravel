@@ -1,5 +1,9 @@
 # Roteiro de testes manuais
 
+## Estrutura Laravel na raiz
+
+Execute os comandos locais em `C:\PHP\Teste_Foco` (Linux: raiz do checkout), onde agora está `artisan`. A pasta `app/` contém apenas as classes da aplicação. Confira `php artisan test`, as URLs `/docs` e `/openapi.json`, o login e a listagem dos hotéis. O ambiente Docker usa a mesma porta e os mesmos volumes; a reorganização não exige migrations ou nova importação. Banco SQLite `foco`, `.env` e `.env.docker` continuam locais e fora do Git.
+
 ## Regressão da listagem de hotéis e revisão final da arquitetura
 
 Atualize a imagem Docker com `docker compose --env-file .env.docker up -d --build`. Não há migration nova.
@@ -143,7 +147,7 @@ Base Docker `http://127.0.0.1:8080/api`, token manager do hotel 1. Use nome e pe
 10. Em categoria com uma unidade, execute dois POST simultâneos com mesmo período em duas janelas do Insomnia: esperado um 201 e um 409. Categoria com duas unidades: dois 201 em quartos diferentes. Teste também reserva direta por room_id concorrendo com reserva por categoria; nunca deve haver sobreposição no mesmo quarto.
 11. Reimportação XML no mesmo hotel preserva categoria atribuída a quarto importado. Não altera nem duplica o estoque cadastrado pela API.
 
-Cobertura PHPUnit: `app/tests/Feature/RoomCategoryTest.php` e teste de preservação no `XmlImportTest.php`. Concorrência de bloqueios também é coberta pela suíte MySQL separada; os passos manuais permitem reproduzi-la.
+Cobertura PHPUnit: `tests/Feature/RoomCategoryTest.php` e teste de preservação no `XmlImportTest.php`. Concorrência de bloqueios também é coberta pela suíte MySQL separada; os passos manuais permitem reproduzi-la.
 
 ## Pagamentos após criação da reserva
 
@@ -186,7 +190,7 @@ POST `/reservations` (troque room_id/datas se necessário):
 - [ ] Concorrência MySQL: em reserva de total 100.00 sem pagamentos, envie simultaneamente dois pagamentos de 80.00 com chaves diferentes em duas janelas do Insomnia. Esperado: um 201 e outro 422, paid 80.00. Repetir simultaneamente a mesma chave deve produzir um registro (201 e 200).
 - [ ] Importação (use ambiente separado): registre pagamento adicional em reserva importada com saldo e execute hotels:import duas vezes. ID/chave do pagamento adicional devem permanecer, sem duplicação. Se dados XML mais pagamentos da nova rota excederem o total, a importação deve falhar e reverter todo o lote. Não altere os XMLs originais para esse teste.
 
-Cobertura automatizada: `app/tests/Feature/PaymentTest.php`. A suíte funcional usa SQLite em memória; simultaneidade também foi validada na suíte MySQL separada descrita no início deste roteiro.
+Cobertura automatizada: `tests/Feature/PaymentTest.php`. A suíte funcional usa SQLite em memória; simultaneidade também foi validada na suíte MySQL separada descrita no início deste roteiro.
 
 ## Cupons
 
@@ -220,7 +224,7 @@ Esperado 201, type percentage. Crie reserva em quarto/período livre:
 - [ ] Validade, mínimo, hotel, permissões, desativação e proibição de discount junto continuam iguais às regras de cupom fixo.
 - [ ] Desativar cupom após reserva não altera o desconto salvo. Pagamentos não podem superar o novo total com desconto.
 
-Cobertura PHPUnit: `app/tests/Feature/PercentageCouponTest.php`, incluindo centavos, percentuais fracionados, 100%, menor percentual e limite monetário.
+Cobertura PHPUnit: `tests/Feature/PercentageCouponTest.php`, incluindo centavos, percentuais fracionados, 100%, menor percentual e limite monetário.
 
 - [ ] Manager no hotel 1: POST `/hotels/1/coupons` com code FOCO30, amount 30.00 e minimum_subtotal 200.00: 201. Repetir o código no mesmo hotel: 422.
 - [ ] Em período livre, reserva com diárias 250.00, coupon_code FOCO30 e service_fee 10.00, sem discount: 201, desconto 30.00, total 230.00.
@@ -272,7 +276,7 @@ Antes dos testes anteriores, conceda manager no hotel usado: `php artisan users:
 - [ ] Repita login seis vezes com mesmo email/IP em um minuto: 429. Aguarde Retry-After e tente novamente.
 - [ ] Após autenticar, repita os fluxos de quarto/reserva; devem preservar os resultados anteriores.
 
-Execute com Postman, Insomnia ou Thunder Client. Servidor: `php artisan serve`, dentro de `app`. Base `http://127.0.0.1:8000/api`. Headers: `Accept: application/json`, `Content-Type: application/json`. Anote o resultado real, data e evidência de cada caso. As caixas abaixo estão pendentes para você executar.
+Execute com Postman, Insomnia ou Thunder Client. Servidor: `php artisan serve`, na raiz do projeto. Base `http://127.0.0.1:8000/api`. Headers: `Accept: application/json`, `Content-Type: application/json`. Anote o resultado real, data e evidência de cada caso. As caixas abaixo estão pendentes para você executar.
 
 ## Importação
 
@@ -347,4 +351,4 @@ No Docker, base `http://127.0.0.1:8080/api`. Use Bearer token de usuário vincul
 6. Em hotel com mais de 20 quartos livres, siga `next_page_url`: os filtros devem permanecer e a segunda página deve continuar contendo apenas quartos livres.
 7. A consulta não bloqueia quartos. Se outro usuário reservar após a consulta, tentar criar reserva sobreposta deve continuar retornando 409.
 
-Cobertura automatizada: `app/tests/Feature/AvailabilityTest.php`, usando SQLite em memória. Não representa estoque de categorias como “10 quartos Standard”; cada registro representa uma unidade física.
+Cobertura automatizada: `tests/Feature/AvailabilityTest.php`, usando SQLite em memória. Não representa estoque de categorias como “10 quartos Standard”; cada registro representa uma unidade física.

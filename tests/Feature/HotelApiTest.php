@@ -39,6 +39,7 @@ class HotelApiTest extends TestCase
     public function test_api_requires_authentication(): void
     {
         $this->getJson('/api/hotels')->assertUnauthorized()->assertHeader('X-Request-ID');
+        $this->get('/api/hotels')->assertUnauthorized()->assertHeader('Content-Type', 'application/json');
     }
 
     public function test_login_issues_token_and_logout_revokes_it(): void
