@@ -4,6 +4,8 @@ Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, c
 
 ## Iniciar no PowerShell
 
+Validação concorrente separada: `docker compose --env-file .env.docker --profile integration run --build --rm integration-tests`. Usa MySQL temporário `mysql-concurrency`, banco `foco_concurrency`, sem porta publicada nem volume do banco da aplicação. Ao terminar, limpe apenas esse serviço com `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. A configuração PHPUnit normal continua independente, usando SQLite em memória.
+
 Na raiz do projeto:
 
 ```powershell
@@ -43,7 +45,7 @@ docker compose --env-file .env.docker down
 
 ## PHPUnit no Docker
 
-Execute `docker compose --env-file .env.docker --profile test run --build --rm tests`. A imagem de testes inclui PHPUnit e outras dependências de desenvolvimento. O banco é SQLite em memória, sem volumes nem conexão ao MySQL da aplicação. Não é necessário parar os containers. O teste de concorrência MySQL continua manual.
+Execute `docker compose --env-file .env.docker --profile test run --build --rm tests`. A imagem de testes inclui PHPUnit e outras dependências de desenvolvimento. O banco é SQLite em memória, sem volumes nem conexão ao MySQL da aplicação. Não é necessário parar os containers. Concorrência MySQL é validada pela configuração separada do perfil integration, descrita acima.
 
 ## Validação manual do ambiente
 

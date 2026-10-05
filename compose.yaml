@@ -26,6 +26,48 @@ x-app: &app
     - app_storage:/var/www/html/storage
 
 services:
+  mysql-concurrency:
+    profiles: ["integration"]
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: foco_concurrency
+      MYSQL_USER: concurrency
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 primeiro}
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u concurrency -D foco_concurrency -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 2s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+
+  integration-tests:
+    profiles: ["integration"]
+    image: foco-tests:local
+    build:
+      context: .
+      target: testing
+    environment:
+      APP_ENV: testing
+      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql-concurrency
+      DB_PORT: "3306"
+      DB_DATABASE: foco_concurrency
+      DB_USERNAME: concurrency
+      DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+      DB_URL: ""
+      CACHE_STORE: array
+      SESSION_DRIVER: array
+      LOG_CHANNEL: "null"
+      QUEUE_CONNECTION: sync
+    command: ["php", "vendor/bin/phpunit", "--configuration", "phpunit.mysql.xml"]
+    depends_on:
+      mysql-concurrency:
+        condition: service_healthy
+
   tests:
     profiles: ["test"]
     image: foco-tests:local

@@ -16,6 +16,7 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `Desafio.md`.
 
 - [x] Swagger / OpenAPI 3.0.
 - [x] Testes automatizados PHPUnit e roteiro manual: última suíte local com 79 testes e 487 verificações.
+- [x] Concorrência no MySQL isolado: 5 testes e 34 verificações, incluindo reservas, estoque e pagamentos.
 - [x] Separação de responsabilidades entre controllers, services e models.
 - [x] Docker com aplicação, MySQL, setup, scheduler e serviço de testes.
 - [x] Verbos HTTP para consultas, criação, atualização e exclusão.
@@ -34,7 +35,7 @@ Histórico local organizado por escopo com mensagens `feat:`, `build:`, `test:` 
 
 ## Limites e verificações manuais
 
-- PHPUnit usa SQLite em memória; bloqueios concorrentes precisam ser verificados no MySQL conforme `TESTES_MANUAIS.md`.
+- A suíte normal usa SQLite em memória. A suíte separada `phpunit.mysql.xml` validou cinco cenários concorrentes no MySQL 8.4; o roteiro manual permanece para reprodução e testes adicionais.
 - Gestão de pagamentos registra recebimentos administrativos: sem gateway, estorno ou conciliação automática com XML.
 - Sem promoções automáticas, juros, limite de usos de cupons ou interface administrativa.
 - Categorias têm cadastro e consulta; nesta etapa não têm alteração/exclusão.

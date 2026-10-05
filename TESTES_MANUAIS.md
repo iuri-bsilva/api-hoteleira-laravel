@@ -1,5 +1,16 @@
 # Roteiro de testes manuais
 
+## Reprodução da validação concorrente automatizada
+
+Em 05/10/2026 passaram 5 testes MySQL com 34 verificações, além dos 79 testes SQLite com 487 verificações. Os passos manuais abaixo continuam disponíveis; não são necessários para disparar a suíte automatizada.
+
+```powershell
+docker compose --env-file .env.docker --profile integration run --build --rm integration-tests
+docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency
+```
+
+A suíte usa banco separado `foco_concurrency`, sem porta publicada e sem volume persistente. Cobre duas reservas diretas disputando quarto, categoria contra reserva direta, duas reservas por categoria com duas unidades, pagamentos concorrentes limitados ao saldo e duas tentativas com a mesma chave. As requisições são executadas pelo kernel HTTP em processos PHP separados. A limpeza final remove somente o MySQL temporário; não use `down -v`.
+
 ## Categorias e estoque por período
 
 - [ ] Após preparar o Docker, GET `/hotels/1/categories` inclui Standard, Luxo e Suíte. Executar `php artisan db:seed --class=RoomCategorySeeder --force` novamente não duplica categorias nem altera vínculos existentes.
@@ -29,7 +40,7 @@ Base Docker `http://127.0.0.1:8080/api`, token manager do hotel 1. Use nome e pe
 10. Em categoria com uma unidade, execute dois POST simultâneos com mesmo período em duas janelas do Insomnia: esperado um 201 e um 409. Categoria com duas unidades: dois 201 em quartos diferentes. Teste também reserva direta por room_id concorrendo com reserva por categoria; nunca deve haver sobreposição no mesmo quarto.
 11. Reimportação XML no mesmo hotel preserva categoria atribuída a quarto importado. Não altera nem duplica o estoque cadastrado pela API.
 
-Cobertura PHPUnit: `app/tests/Feature/RoomCategoryTest.php` e teste de preservação no `XmlImportTest.php`. Concorrência de bloqueios continua no roteiro MySQL, pois a suíte usa SQLite em memória.
+Cobertura PHPUnit: `app/tests/Feature/RoomCategoryTest.php` e teste de preservação no `XmlImportTest.php`. Concorrência de bloqueios também é coberta pela suíte MySQL separada; os passos manuais permitem reproduzi-la.
 
 ## Pagamentos após criação da reserva
 
@@ -72,7 +83,7 @@ POST `/reservations` (troque room_id/datas se necessário):
 - [ ] Concorrência MySQL: em reserva de total 100.00 sem pagamentos, envie simultaneamente dois pagamentos de 80.00 com chaves diferentes em duas janelas do Insomnia. Esperado: um 201 e outro 422, paid 80.00. Repetir simultaneamente a mesma chave deve produzir um registro (201 e 200).
 - [ ] Importação (use ambiente separado): registre pagamento adicional em reserva importada com saldo e execute hotels:import duas vezes. ID/chave do pagamento adicional devem permanecer, sem duplicação. Se dados XML mais pagamentos da nova rota excederem o total, a importação deve falhar e reverter todo o lote. Não altere os XMLs originais para esse teste.
 
-Cobertura automatizada: `app/tests/Feature/PaymentTest.php`. A suíte usa SQLite em memória; o cenário de simultaneidade acima permanece manual no MySQL.
+Cobertura automatizada: `app/tests/Feature/PaymentTest.php`. A suíte funcional usa SQLite em memória; simultaneidade também foi validada na suíte MySQL separada descrita no início deste roteiro.
 
 ## Cupons
 

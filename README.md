@@ -8,9 +8,17 @@ Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO.md](PROG
 
 ## Testes automatizados PHPUnit
 
+### Concorrência real no MySQL
+
+Na raiz, execute `docker compose --env-file .env.docker --profile integration run --build --rm integration-tests`. A suíte separada `app/phpunit.mysql.xml` executa diretamente o PHPUnit e usa MySQL 8.4 em `mysql-concurrency`, banco `foco_concurrency`, sem porta publicada ou volume persistente (dados em tmpfs). Não utiliza o banco `foco` da aplicação. Uma verificação de host/banco/ambiente ocorre antes das migrations; os testes usam migrations completas por caso e revertem ao terminar. Não execute essa configuração contra um banco de uso real.
+
+Cinco testes, com 34 verificações, passaram em 05/10/2026: reserva direta concorrente, categoria competindo com reserva direta pela última unidade, duas reservas da mesma categoria em unidades distintas, pagamentos concorrentes acima do saldo e reenvio concorrente da mesma chave. Dois processos PHP independentes usam barreira de início e mantêm brevemente o primeiro bloqueio real da aplicação para exercitar a sobreposição. Cada processo percorre o kernel HTTP com token de teste. O roteiro manual permanece disponível para repetir cenários com Insomnia/Swagger.
+
+Depois dos testes, remova apenas o serviço temporário: `docker compose --env-file .env.docker --profile integration rm --stop --force mysql-concurrency`. Não use `down -v`, pois ele poderia remover os volumes da aplicação. A suíte normal continua com 79 testes e 487 verificações em SQLite em memória, sem executar estes cinco casos automaticamente.
+
 Na pasta `app`, após `composer install`, execute `php artisan test`. Os testes de exemplo foram substituídos por casos de autenticação, permissões por hotel, CRUD, reservas/valores/limites de disponibilidade e importação XML com rollback e idempotência. `phpunit.xml` força SQLite `:memory:` e a classe base rejeita outra configuração antes de executar migrations. Não utiliza o banco SQLite local nem o MySQL dos containers. O canal audit é desabilitado na suíte para não misturar seus registros manuais.
 
-Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run --build --rm tests`. O serviço de testes usa uma imagem própria com dependências de desenvolvimento, sem volumes do projeto e sem depender do MySQL. A aplicação normal continua instalada com `--no-dev`. A suíte verifica regras funcionais em SQLite; concorrência com bloqueio de linha no MySQL permanece no roteiro de testes manuais.
+Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run --build --rm tests`. O serviço de testes usa uma imagem própria com dependências de desenvolvimento, sem volumes do projeto e sem depender do MySQL. A aplicação normal continua instalada com `--no-dev`. A suíte normal verifica regras funcionais em SQLite; a configuração separada acima valida concorrência com bloqueio de linha no MySQL.
 
 ## Executar a aplicação no Windows
 
