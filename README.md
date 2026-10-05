@@ -166,6 +166,8 @@ Logs: `app/storage/logs/laravel.log` e, nas execuções agendadas, `app/storage/
 
 ## Modelagem
 
+Modelo completo revisado e explicações em [MODELAGEM.md](MODELAGEM.md). Arquivo editável do Workbench: [DER FOCO.mwb](<app/DER FOCO.mwb>); exportação visual: [DER FOCO.png](<app/DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
+
 ## Logs da API
 
 Requisições `/api/*` recebem o header `X-Request-ID` gerado pelo servidor. O registro `api.request` contém esse identificador, ID do usuário autenticado (ou null), método HTTP, template da rota, status e duração em milissegundos. Sucessos têm nível info, respostas 4xx warning e 5xx error. Login/logout, validações, acessos negados e operações em quartos/reservas passam pelo mesmo registro. Não são gravados corpo, query string, headers, senha, token, email, IP ou dados de hóspedes nesse canal.

@@ -6,6 +6,7 @@ Atualizado em 05/10/2026. O enunciado original está preservado em `Desafio.md`.
 
 - [x] Documentação de execução, importação, agendamento e uso da API.
 - [x] Modelagem baseada nos XMLs, com migrations versionadas.
+- [x] Modelo Workbench e exportação PNG revisados: 19 tabelas, 120 campos e 10 chaves estrangeiras. Consulte `MODELAGEM.md`.
 - [x] Comando Laravel para importar XML, com transação e idempotência.
 - [x] Agendamento da importação no scheduler; Docker inclui processo dedicado.
 - [x] CRUD de quartos por API REST.
