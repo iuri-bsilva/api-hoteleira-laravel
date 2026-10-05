@@ -7,11 +7,31 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
+    public function hotels()
+    {
+        return $this->belongsToMany(Hotel::class)->withPivot('role')->withTimestamps();
+    }
+
+    public function hotelIds()
+    {
+        return $this->hotels()->select('hotels.id');
+    }
+
+    public function requireHotelAccess(int $hotelId, bool $write = false): void
+    {
+        $query = $this->hotels()->where('hotels.id', $hotelId);
+        if ($write) {
+            $query->wherePivot('role', 'manager');
+        }
+        abort_unless($query->exists(), 403, 'Sem permissão para esta operação no hotel.');
+    }
+
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.

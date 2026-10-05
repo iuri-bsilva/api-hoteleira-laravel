@@ -46,6 +46,9 @@ class ImportHotelXml extends Command
                     if ($room && $room->hotel_id != $hotel->id && $room->reservations()->exists()) {
                         throw new RuntimeException("Quarto $id possui reservas e não pode mudar de hotel.");
                     }
+                    if ($room && $room->hotel_id != $hotel->id && $room->room_category_id !== null) {
+                        throw new RuntimeException("Quarto $id possui categoria e não pode mudar de hotel pela importação.");
+                    }
                     Room::updateOrCreate(['external_id' => $id], ['hotel_id' => $hotel->id, 'name' => $name]);
                 }
                 $seen = [];

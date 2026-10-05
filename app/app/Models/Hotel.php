@@ -12,4 +12,9 @@ class Hotel extends Model
     {
         return $this->hasMany(Room::class);
     }
+
+    public function coupons()
+    {
+        return $this->hasMany(Coupon::class);
+    }
 }

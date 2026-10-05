@@ -10,5 +10,5 @@ class Payment extends Model
 
     protected $fillable = ['method', 'value'];
 
-    protected $casts = ['value' => 'decimal:2'];
+    protected $casts = ['value' => 'decimal:2', 'recorded_at' => 'datetime'];
 }

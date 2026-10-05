@@ -8,7 +8,7 @@ class Reservation extends Model
 {
     protected $fillable = ['external_id', 'room_id', 'check_in', 'check_out', 'total'];
 
-    protected $casts = ['total' => 'decimal:2'];
+    protected $casts = ['total' => 'decimal:2', 'subtotal' => 'decimal:2', 'discount' => 'decimal:2', 'service_fee' => 'decimal:2'];
 
     public function room()
     {

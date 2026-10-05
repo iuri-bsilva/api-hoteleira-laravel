@@ -1,0 +1,3144 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "API Hoteleira Foco",
+        "version": "1.0.0",
+        "description": "API Laravel do desafio Foco. Faça login e informe access_token em Authorize. Acesso por hotel: viewer consulta; manager consulta e modifica. Sem vínculo, listagens vazias e acesso direto negado (403). Transferir quarto exige manager nos dois hotéis. Token válido por oito horas. Try it out executa operações reais. Importação XML é comando administrativo Artisan."
+    },
+    "servers": [
+        {
+            "url": "/api",
+            "description": "API no mesmo servidor da documentação"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Hotéis"
+        },
+        {
+            "name": "Quartos"
+        },
+        {
+            "name": "Reservas"
+        },
+        {
+            "name": "Autenticação"
+        },
+        {
+            "name": "Cupons",
+            "description": "Gestão restrita a manager do hotel."
+        },
+        {
+            "name": "Pagamentos",
+            "description": "Registro administrativo e saldo da reserva; não processa cobranças em gateway."
+        },
+        {
+            "name": "Categorias",
+            "description": "Categorias por hotel, estoque formado por quartos físicos."
+        }
+    ],
+    "paths": {
+        "/hotels": {
+            "get": {
+                "tags": [
+                    "Hotéis"
+                ],
+                "operationId": "listHotels",
+                "summary": "Listar hotéis importados",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "description": "Página; 20 registros por página."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HotelPage"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            }
+        },
+        "/rooms": {
+            "get": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "listRooms",
+                "summary": "Listar quartos",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "description": "Página; 20 registros por página."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada, com hotel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoomPage"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "createRoom",
+                "summary": "Cadastrar quarto",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RoomCreate"
+                            },
+                            "example": {
+                                "hotel_id": 1,
+                                "name": "Suíte Swagger"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Quarto cadastrado. A relação hotel não é carregada nesta resposta.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Room"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            }
+        },
+        "/rooms/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "description": "ID interno, não external_id."
+                }
+            ],
+            "get": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "showRoom",
+                "summary": "Consultar quarto",
+                "responses": {
+                    "200": {
+                        "description": "Quarto com hotel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Room"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "putRoom",
+                "summary": "Alterar quarto",
+                "description": "PUT e PATCH aceitam atualização parcial na implementação atual.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RoomUpdate"
+                            },
+                            "example": {
+                                "name": "Suíte atualizada"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quarto atualizado. A relação hotel não é carregada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Room"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito de disponibilidade ou quarto com reservas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Quarto indisponível para o período."
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "patchRoom",
+                "summary": "Alterar quarto",
+                "description": "PUT e PATCH aceitam atualização parcial na implementação atual.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RoomUpdate"
+                            },
+                            "example": {
+                                "name": "Suíte atualizada"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quarto atualizado. A relação hotel não é carregada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Room"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito de disponibilidade ou quarto com reservas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Quarto indisponível para o período."
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "deleteRoom",
+                "summary": "Excluir quarto sem reservas",
+                "responses": {
+                    "200": {
+                        "description": "Quarto excluído.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Quarto excluído."
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Quarto possui reservas; exclusão impedida.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Quarto possui reservas."
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            }
+        },
+        "/reservations": {
+            "get": {
+                "tags": [
+                    "Reservas"
+                ],
+                "operationId": "listReservations",
+                "summary": "Listar reservas",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "description": "Página; 20 registros por página."
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada com quarto, hotel, hóspedes, diárias e pagamentos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ReservationPage"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Reservas"
+                ],
+                "operationId": "createReservation",
+                "summary": "Criar reserva",
+                "description": "Cada quarto representa uma unidade física. Impede sobreposição; check-out pode coincidir com entrada de outra reserva. Datas históricas são aceitas. Total calculado pelas diárias. IDs externos e total enviados pelo cliente são ignorados. Desconto e taxa opcionais em valores fixos: total = subtotal - discount + service_fee. Sem campos de ajuste, ambos são zero. Cupons fixos e percentuais por hotel disponíveis. coupon_code aplica desconto sobre o subtotal das diárias, antes da taxa, limitado ao subtotal. Percentuais arredondam ao centavo mais próximo com empate para cima. Não enviar discount junto ao cupom. Validade inclusive pela data de criação, no fuso da aplicação (UTC por padrão), e não pela data do check-in. Cupons são reutilizáveis, sem limite de usos. Envie somente room_id ou room_category_id. Categoria aloca uma unidade física livre para todo o período, com menor ID; retorna room_id escolhido. Sem unidade livre, 409. Regras de cupons, taxas e pagamentos continuam iguais.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ReservationCreate"
+                            },
+                            "example": {
+                                "room_id": 1,
+                                "check_in": "2027-06-10",
+                                "check_out": "2027-06-12",
+                                "guests": [
+                                    {
+                                        "name": "Ana",
+                                        "last_name": "Silva",
+                                        "phone": "5571999999999"
+                                    }
+                                ],
+                                "dailies": [
+                                    {
+                                        "date": "2027-06-10",
+                                        "value": "100.00"
+                                    },
+                                    {
+                                        "date": "2027-06-11",
+                                        "value": "150.00"
+                                    }
+                                ],
+                                "payments": [
+                                    {
+                                        "method": 1,
+                                        "value": "100.00"
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Reserva criada com todos os detalhes.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Reservation"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito de disponibilidade ou quarto com reservas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Quarto indisponível para o período."
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            }
+        },
+        "/reservations/{id}": {
+            "parameters": [
+                {
+                    "name": "id",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "description": "ID interno, não external_id."
+                }
+            ],
+            "get": {
+                "tags": [
+                    "Reservas"
+                ],
+                "operationId": "showReservation",
+                "summary": "Consultar reserva",
+                "responses": {
+                    "200": {
+                        "description": "Reserva detalhada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Reservation"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "operationId": "login",
+                "summary": "Obter token de acesso",
+                "security": [],
+                "description": "Usuários são criados por php artisan users:create. Até cinco tentativas por email/IP e dez por IP a cada minuto. Credenciais incorretas retornam erro genérico.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Login"
+                            },
+                            "example": {
+                                "email": "seu-email@exemplo.com",
+                                "password": "SUBSTITUA_PELA_SUA_SENHA",
+                                "device_name": "Swagger"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Token emitido. Guarde-o como uma senha.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/LoginResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Muitas tentativas. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/me": {
+            "get": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "operationId": "currentUser",
+                "summary": "Consultar usuário autenticado",
+                "responses": {
+                    "200": {
+                        "description": "Usuário atual e hotéis vinculados com pivot.role; senha nunca retornada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token inválido ou ausente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de requisições excedido.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "tags": [
+                    "Autenticação"
+                ],
+                "operationId": "logout",
+                "summary": "Revogar o token atual",
+                "description": "Outros tokens do usuário permanecem válidos. Após logout, remova o token de Authorize.",
+                "responses": {
+                    "200": {
+                        "description": "Token revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token inválido ou ausente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de requisições excedido.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hotels/{hotel}/coupons": {
+            "parameters": [
+                {
+                    "name": "hotel",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "description": "ID interno do hotel."
+                }
+            ],
+            "get": {
+                "tags": [
+                    "Cupons"
+                ],
+                "operationId": "listCoupons",
+                "summary": "Listar cupons do hotel",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cupons paginados, inclusive inativos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CouponPage"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Erro 401",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Erro 403",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Erro 404",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Erro 429",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Cupons"
+                ],
+                "operationId": "createCoupon",
+                "summary": "Cadastrar cupom fixo",
+                "description": "Manager cria cupom de valor fixo (type fixed, padrão) ou percentual (type percentage). Percentual aplica-se somente ao subtotal das diárias e arredonda ao centavo mais próximo, com empate para cima. Taxa de serviço é somada após o desconto. Datas inclusivas avaliadas na criação da reserva; não por check-in. Tipo e valores não podem ser alterados: desative e crie outro código.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CouponCreate"
+                            },
+                            "example": {
+                                "code": "FOCO30",
+                                "amount": "30.00",
+                                "minimum_subtotal": "200.00",
+                                "active": true
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Cupom cadastrado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Coupon"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Erro 401",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Erro 403",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Erro 404",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro 422",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Erro 429",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hotels/{hotel}/coupons/{coupon}": {
+            "parameters": [
+                {
+                    "name": "hotel",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "description": "ID interno do hotel."
+                },
+                {
+                    "name": "coupon",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "integer",
+                        "minimum": 1
+                    }
+                }
+            ],
+            "patch": {
+                "tags": [
+                    "Cupons"
+                ],
+                "operationId": "activateCoupon",
+                "summary": "Ativar ou desativar cupom",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "active"
+                                ],
+                                "properties": {
+                                    "active": {
+                                        "type": "boolean"
+                                    }
+                                }
+                            },
+                            "example": {
+                                "active": false
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Estado atualizado. Reservas anteriores preservadas.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Coupon"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Erro 401",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Erro 403",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Erro 404",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro 422",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Erro 429",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/rooms/availability": {
+            "get": {
+                "tags": [
+                    "Quartos"
+                ],
+                "operationId": "availableRooms",
+                "summary": "Consultar quartos disponíveis por período",
+                "parameters": [
+                    {
+                        "name": "check_in",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-10-10"
+                    },
+                    {
+                        "name": "check_out",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        },
+                        "example": "2027-10-12"
+                    },
+                    {
+                        "name": "hotel_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "description": "Filtro opcional; hotel existente sem vínculo retorna 403."
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada, com hotel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoomPage"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "description": "Retorna unidades físicas livres dos hotéis vinculados ao usuário (viewer ou manager). Check-out é exclusivo; até 366 noites. Total indica a quantidade de quartos livres, não categorias. Consulta não bloqueia nem garante disponibilidade futura: POST de reserva revalida o período e pode retornar 409."
+            }
+        },
+        "/reservations/{reservation}/payments": {
+            "get": {
+                "tags": [
+                    "Pagamentos"
+                ],
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Resumo financeiro e todos os pagamentos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentSummary"
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "listPayments",
+                "summary": "Consultar pagamentos e saldo da reserva",
+                "description": "Viewer e manager do hotel podem consultar. paid soma todos os pagamentos; balance = total - paid. Reserva com total zero é paid."
+            },
+            "post": {
+                "tags": [
+                    "Pagamentos"
+                ],
+                "parameters": [
+                    {
+                        "name": "reservation",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Pagamento registrado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentRecorded"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Repetição do mesmo pagamento; retorna o registro anterior e saldo atual.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PaymentRecorded"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Chave já utilizada com outro método ou valor.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "recordPayment",
+                "summary": "Registrar pagamento na reserva",
+                "description": "Exige manager. Registra recebimento administrativo sem cobrança externa. Chave UUID obrigatória, única por reserva: repetição com mesmo método/valor retorna 200 sem duplicar; dados diferentes para a mesma chave retornam 409. Valor positivo não pode ultrapassar o saldo. Operação transacional com bloqueio de linha no MySQL. Pagamentos da nova rota são preservados na importação XML; soma incompatível com o novo total interrompe o lote.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PaymentRecord"
+                            },
+                            "example": {
+                                "method": 1,
+                                "value": "30.00",
+                                "idempotency_key": "123e4567-e89b-42d3-a456-426614174000"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hotels/{hotel}/categories": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "parameters": [
+                    {
+                        "name": "hotel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Categorias do hotel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoomCategoryPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "listCategories",
+                "summary": "Listar categorias e quantidade de quartos",
+                "description": "Viewer e manager do hotel podem consultar. Paginação de 20 categorias. rooms_count corresponde ao número de quartos vinculados, sem filtro de datas."
+            },
+            "post": {
+                "tags": [
+                    "Categorias"
+                ],
+                "parameters": [
+                    {
+                        "name": "hotel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Categoria criada.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoomCategory"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "createCategory",
+                "summary": "Cadastrar categoria no hotel",
+                "description": "Exige manager. Nome único no hotel. Categoria inicia sem quartos. Vincule quartos existentes por PATCH /rooms/{id}, ou crie quartos com room_category_id. Não há exclusão ou alteração da categoria nesta etapa.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RoomCategoryCreate"
+                            },
+                            "example": {
+                                "name": "Standard"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/hotels/{hotel}/categories/availability": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "parameters": [
+                    {
+                        "name": "hotel",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "check_in",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "check_out",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Token ausente, inválido, expirado ou revogado.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                },
+                                "example": {
+                                    "message": "Sem permissão para esta operação no hotel."
+                                }
+                            }
+                        },
+                        "description": "Sem vínculo com o hotel ou sem perfil manager para escrita."
+                    },
+                    "404": {
+                        "description": "Registro inexistente.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Limite de 60 requisições por minuto excedido. Aguarde Retry-After.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "200": {
+                        "description": "Categorias do hotel.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RoomCategoryPage"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dados inválidos.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                },
+                                "example": {
+                                    "message": "The name field is required.",
+                                    "errors": {
+                                        "name": [
+                                            "The name field is required."
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "operationId": "availableCategories",
+                "summary": "Consultar quantidade disponível por categoria",
+                "description": "Retorna rooms_count e available_count por categoria. Apenas quartos livres durante todas as noites são contados. Check-out exclusivo, máximo 366 noites. Categorias vazias ou esgotadas são retornadas com zero. Consulta não garante estoque futuro; criação revalida em transação."
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Hotel": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "external_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "pivot": {
+                        "description": "Presente na listagem de hotéis vinculados ao usuário.",
+                        "properties": {
+                            "created_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "hotel_id": {
+                                "type": "integer"
+                            },
+                            "role": {
+                                "type": "string",
+                                "enum": [
+                                    "viewer",
+                                    "manager"
+                                ]
+                            },
+                            "user_id": {
+                                "type": "integer"
+                            },
+                            "updated_at": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        },
+                        "type": "object"
+                    }
+                }
+            },
+            "Room": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "external_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "hotel_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "hotel": {
+                        "$ref": "#/components/schemas/Hotel"
+                    },
+                    "room_category_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "Categoria do mesmo hotel; null remove o vínculo. Opcional."
+                    },
+                    "category": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/RoomCategory"
+                            }
+                        ],
+                        "nullable": true,
+                        "description": "Carregada na consulta e listagem de quartos."
+                    }
+                }
+            },
+            "RoomCreate": {
+                "type": "object",
+                "properties": {
+                    "hotel_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "ID interno de um hotel existente."
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "room_category_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "Categoria do mesmo hotel; null remove o vínculo. Opcional."
+                    }
+                },
+                "required": [
+                    "hotel_id",
+                    "name"
+                ]
+            },
+            "RoomUpdate": {
+                "type": "object",
+                "properties": {
+                    "hotel_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Só pode mudar de hotel se não houver reservas."
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "room_category_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "nullable": true,
+                        "description": "Categoria do mesmo hotel; null remove o vínculo. Opcional."
+                    }
+                }
+            },
+            "GuestInput": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 30,
+                        "minLength": 1
+                    }
+                },
+                "required": [
+                    "name",
+                    "last_name",
+                    "phone"
+                ]
+            },
+            "DailyInput": {
+                "type": "object",
+                "properties": {
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "value": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Valor em reais, até duas casas decimais."
+                    }
+                },
+                "required": [
+                    "date",
+                    "value"
+                ]
+            },
+            "PaymentInput": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "description": "Código numérico do método. A origem XML não define os significados."
+                    },
+                    "value": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Valor em reais, até duas casas decimais."
+                    }
+                },
+                "required": [
+                    "method",
+                    "value"
+                ]
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ValidationError": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "message",
+                    "errors"
+                ]
+            },
+            "ReservationCreate": {
+                "type": "object",
+                "properties": {
+                    "room_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "check_in": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "check_out": {
+                        "type": "string",
+                        "format": "date",
+                        "description": "Posterior à entrada; máximo de 366 noites."
+                    },
+                    "guests": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/GuestInput"
+                        },
+                        "minItems": 1,
+                        "maxItems": 50
+                    },
+                    "dailies": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/DailyInput"
+                        },
+                        "minItems": 1,
+                        "maxItems": 366,
+                        "description": "Uma diária por noite, com datas distintas; exclui check-out."
+                    },
+                    "payments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PaymentInput"
+                        },
+                        "maxItems": 100,
+                        "description": "Opcional; soma não pode superar o total final após desconto e taxa."
+                    },
+                    "discount": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Desconto fixo em reais, opcional (padrão 0), até o subtotal das diárias. Apenas manager pode criar reservas."
+                    },
+                    "service_fee": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Taxa de serviço fixa em reais, opcional (padrão 0). Não pode fazer total exceder 9999999999.99."
+                    },
+                    "coupon_code": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "example": "FOCO30",
+                        "description": "Opcional, do hotel do quarto. Omitir discount ao usar cupom. Deve estar ativo, válido na data atual e satisfazer subtotal mínimo. Cupons percentuais aplicam-se ao subtotal, com arredondamento ao centavo mais próximo (empate para cima), antes da taxa de serviço."
+                    },
+                    "room_category_id": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Alternativa a room_id. Escolhe automaticamente o quarto livre com menor ID na categoria."
+                    }
+                },
+                "required": [
+                    "check_in",
+                    "check_out",
+                    "guests",
+                    "dailies"
+                ],
+                "oneOf": [
+                    {
+                        "required": [
+                            "room_id"
+                        ],
+                        "not": {
+                            "required": [
+                                "room_category_id"
+                            ]
+                        }
+                    },
+                    {
+                        "required": [
+                            "room_category_id"
+                        ],
+                        "not": {
+                            "required": [
+                                "room_id"
+                            ]
+                        }
+                    }
+                ]
+            },
+            "Guest": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "reservation_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
+                    "last_name": {
+                        "type": "string",
+                        "maxLength": 255,
+                        "minLength": 1
+                    },
+                    "phone": {
+                        "type": "string",
+                        "maxLength": 30,
+                        "minLength": 1
+                    }
+                }
+            },
+            "Daily": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "reservation_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "value": {
+                        "type": "string",
+                        "example": "100.00"
+                    }
+                }
+            },
+            "Payment": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "reservation_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "method": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "description": "Código numérico do método. A origem XML não define os significados."
+                    },
+                    "value": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "idempotency_key": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "recorded_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true,
+                        "description": "Data de registro pela nova rota; null para XML e pagamentos iniciais."
+                    }
+                }
+            },
+            "Reservation": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "external_id": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "room_id": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "check_in": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "check_out": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "total": {
+                        "type": "string",
+                        "example": "250.00",
+                        "description": "Calculado no servidor: subtotal das diárias - discount + service_fee. Total enviado pelo cliente é ignorado."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "room": {
+                        "$ref": "#/components/schemas/Room"
+                    },
+                    "guests": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Guest"
+                        }
+                    },
+                    "dailies": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Daily"
+                        }
+                    },
+                    "payments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Payment"
+                        }
+                    },
+                    "subtotal": {
+                        "type": "string",
+                        "example": "250.00"
+                    },
+                    "discount": {
+                        "type": "string",
+                        "example": "30.00"
+                    },
+                    "service_fee": {
+                        "type": "string",
+                        "example": "10.00"
+                    },
+                    "coupon_code": {
+                        "type": "string",
+                        "nullable": true,
+                        "example": "FOCO30",
+                        "description": "Código aplicado, preservado junto ao desconto na reserva."
+                    }
+                }
+            },
+            "HotelPage": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Hotel"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RoomPage": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Room"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ReservationPage": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Reservation"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "Login": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "password"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string",
+                        "format": "password",
+                        "maxLength": 255
+                    },
+                    "device_name": {
+                        "type": "string",
+                        "maxLength": 100
+                    }
+                }
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "email_verified_at": {
+                        "type": "string",
+                        "nullable": true,
+                        "format": "date-time"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "hotels": {
+                        "description": "Vínculos e perfis, retornados em auth/me.",
+                        "items": {
+                            "$ref": "#/components/schemas/Hotel"
+                        },
+                        "type": "array"
+                    }
+                }
+            },
+            "LoginResponse": {
+                "type": "object",
+                "properties": {
+                    "token_type": {
+                        "type": "string",
+                        "example": "Bearer"
+                    },
+                    "access_token": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                }
+            },
+            "CouponCreate": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "amount"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "pattern": "^[A-Z0-9_-]+$",
+                        "description": "Normalizado para maiúsculas e sem espaços nas extremidades. Único por hotel."
+                    },
+                    "amount": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Valor fixo em reais ou percentual conforme type. Percentual de 0.01 a 100.00; fixo de 0.01 a 9999999999.99."
+                    },
+                    "minimum_subtotal": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Subtotal mínimo das diárias; padrão 0."
+                    },
+                    "valid_from": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "valid_until": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "fixed",
+                            "percentage"
+                        ],
+                        "default": "fixed",
+                        "description": "fixed: amount em reais; percentage: amount em percentual, maior que zero e até 100, com até duas casas."
+                    }
+                }
+            },
+            "Coupon": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "hotel_id": {
+                        "type": "integer"
+                    },
+                    "code": {
+                        "type": "string",
+                        "maxLength": 50,
+                        "pattern": "^[A-Z0-9_-]+$",
+                        "description": "Normalizado para maiúsculas e sem espaços nas extremidades. Único por hotel."
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "30.00",
+                        "description": "Valor fixo em reais ou percentual conforme type. Percentual de 0.01 a 100.00; fixo de 0.01 a 9999999999.99."
+                    },
+                    "minimum_subtotal": {
+                        "type": "string",
+                        "example": "200.00"
+                    },
+                    "valid_from": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "valid_until": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "active": {
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "fixed",
+                            "percentage"
+                        ],
+                        "default": "fixed",
+                        "description": "fixed: amount em reais; percentage: amount em percentual, maior que zero e até 100, com até duas casas."
+                    }
+                }
+            },
+            "CouponPage": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Coupon"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "PaymentRecord": {
+                "type": "object",
+                "properties": {
+                    "method": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 65535,
+                        "description": "Código numérico do método. A origem XML não define os significados."
+                    },
+                    "value": {
+                        "oneOf": [
+                            {
+                                "type": "string",
+                                "pattern": "^\\d{1,10}(\\.\\d{1,2})?$"
+                            },
+                            {
+                                "type": "number",
+                                "minimum": 0.01,
+                                "maximum": 9999999999.99,
+                                "multipleOf": 0.01
+                            }
+                        ],
+                        "description": "Positivo, mínimo 0.01, até duas casas decimais e limitado ao saldo pendente."
+                    },
+                    "idempotency_key": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Uma UUID por operação. Reutilize a mesma chave apenas para repetir o mesmo pagamento da mesma reserva."
+                    }
+                },
+                "required": [
+                    "method",
+                    "value",
+                    "idempotency_key"
+                ]
+            },
+            "PaymentSummary": {
+                "type": "object",
+                "properties": {
+                    "reservation_id": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "string",
+                        "example": "230.00"
+                    },
+                    "paid": {
+                        "type": "string",
+                        "example": "130.00"
+                    },
+                    "balance": {
+                        "type": "string",
+                        "example": "100.00"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "unpaid",
+                            "partial",
+                            "paid"
+                        ]
+                    },
+                    "payments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Payment"
+                        }
+                    }
+                }
+            },
+            "PaymentRecorded": {
+                "type": "object",
+                "properties": {
+                    "payment": {
+                        "$ref": "#/components/schemas/Payment"
+                    },
+                    "summary": {
+                        "$ref": "#/components/schemas/PaymentSummary"
+                    }
+                }
+            },
+            "RoomCategory": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "hotel_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "rooms_count": {
+                        "type": "integer",
+                        "description": "Quantidade de quartos vinculados."
+                    },
+                    "available_count": {
+                        "type": "integer",
+                        "description": "Quartos livres durante todo o período; somente na consulta de disponibilidade."
+                    }
+                }
+            },
+            "RoomCategoryCreate": {
+                "type": "object",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "maxLength": 100,
+                        "example": "Standard"
+                    }
+                }
+            },
+            "RoomCategoryPage": {
+                "type": "object",
+                "properties": {
+                    "current_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/RoomCategory"
+                        }
+                    },
+                    "first_page_url": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "last_page": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "last_page_url": {
+                        "type": "string"
+                    },
+                    "links": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "url": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "label": {
+                                    "type": "string"
+                                },
+                                "active": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    },
+                    "next_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "path": {
+                        "type": "string"
+                    },
+                    "per_page": {
+                        "type": "integer",
+                        "example": 20
+                    },
+                    "prev_page_url": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "to": {
+                        "type": "integer",
+                        "nullable": true
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "description": "Token Sanctum retornado no login. Cole somente access_token, sem o prefixo Bearer."
+            }
+        }
+    },
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ]
+}
