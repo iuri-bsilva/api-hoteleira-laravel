@@ -1,5 +1,17 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de cupons
+
+No Docker, reconstrua a imagem com `docker compose --env-file .env.docker up -d --build`. Use token manager do hotel e substitua `HOTEL` e `CUPOM` pelos IDs internos. Não há migration nova.
+
+1. POST `/api/hotels/HOTEL/coupons` com `{"code":" teste-arquitetura ","type":"percentage","amount":"10.00"}`: 201, código `TESTE-ARQUITETURA`. Guarde o ID. GET na mesma rota: 200, paginação de 20 e cupons somente desse hotel.
+2. Repita o cadastro com o mesmo código: 422 no campo `code`, sem duplicação. Percentual `100.01`, valor com três casas, tipo desconhecido ou validade final anterior à inicial também retorna 422.
+3. PATCH `/api/hotels/HOTEL/coupons/CUPOM` com `{"active":false,"amount":"99.00","code":"ALTERADO","type":"fixed"}`: 200, apenas `active` muda. Confira por GET que código, valor e tipo permanecem os originais. PATCH sem `active` retorna 422.
+4. Reative com `{"active":true}`: 200. Crie reserva de teste com esse código e subtotal 250.00: desconto 25.00; com taxa 10.00, total 235.00. Desative o cupom: reserva existente mantém o total, nova reserva com ele retorna 422.
+5. Viewer não pode listar, cadastrar ou alterar cupons: 403. Sem token: 401. Cupom existente na rota de outro hotel: 404, mesmo antes de validar o corpo. Hotel sem vínculo: 403 nas operações de gestão.
+
+No código, o controller não contém validações, consultas ou transações; Requests cuidam dos campos, `CouponService` das regras e `CouponRepository` da persistência. O desconto da reserva continua sendo calculado pelo serviço de reservas.
+
 ## Regressão da separação Request / Service / Repository de quartos
 
 No Docker, reconstrua a imagem antes de testar: `docker compose --env-file .env.docker up -d --build`. Use hotéis, categorias e quartos de teste; não há migration nova.

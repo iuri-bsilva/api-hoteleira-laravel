@@ -42,7 +42,9 @@ Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `doc
 - [x] Regressão após a refatoração: 79 testes funcionais / 487 verificações em SQLite e 5 testes concorrentes / 34 verificações no MySQL temporário passaram.
 - [x] Quartos separados em Requests de cadastro, alteração e disponibilidade, controller, service e repository, com interfaces registradas no container.
 - [x] Regressão de quartos: 80 testes funcionais / 496 verificações e 5 testes concorrentes MySQL / 34 verificações passaram, incluindo novo caso de rollback na transferência com categoria incompatível.
-- Reservas, categorias, cupons e autenticação ainda não foram migrados integralmente para esse padrão. O roteiro de regressão está em `TESTES_MANUAIS.md`.
+- [x] Gestão de cupons separada em Requests, controller, service e repository, com contratos no container Laravel; aplicação do desconto na reserva continua no serviço de reservas.
+- [x] Regressão de cupons: 81 testes funcionais / 503 verificações passaram, incluindo a proteção dos campos comerciais no PATCH de ativação.
+- Reservas, categorias e autenticação ainda não foram migradas integralmente para esse padrão. O roteiro de regressão está em `TESTES_MANUAIS.md`.
 
 ## Limites e verificações manuais
 

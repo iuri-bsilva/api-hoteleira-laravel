@@ -48,6 +48,20 @@ class CouponTest extends TestCase
         $this->patchJson($url.'/'.$created->json('id'), ['active' => false])->assertOk()->assertJsonPath('active', false);
     }
 
+    public function test_update_only_changes_active_and_preserves_coupon_terms(): void
+    {
+        $room = $this->setupHotel();
+        $coupon = $this->coupon($room);
+        $this->patchJson('/api/hotels/'.$room->hotel_id.'/coupons/'.$coupon->id, [
+            'active' => false, 'code' => 'ALTERADO', 'amount' => '99.00',
+            'type' => 'percentage', 'hotel_id' => 999999,
+        ])->assertOk()->assertJsonPath('active', false)
+            ->assertJsonPath('code', 'FOCO30')->assertJsonPath('amount', '30.00')
+            ->assertJsonPath('type', 'fixed')->assertJsonPath('hotel_id', $room->hotel_id);
+
+        $this->assertDatabaseHas('coupons', ['id' => $coupon->id, 'code' => 'FOCO30', 'amount' => '30.00', 'type' => 'fixed', 'hotel_id' => $room->hotel_id, 'active' => false]);
+    }
+
     public function test_viewer_cannot_manage_coupons(): void
     {
         $room = $this->setupHotel('viewer');

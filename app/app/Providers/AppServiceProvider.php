@@ -2,12 +2,16 @@
 
 namespace App\Providers;
 
+use App\Interfaces\Repositories\CouponRepositoryInterface;
 use App\Interfaces\Repositories\PaymentRepositoryInterface;
 use App\Interfaces\Repositories\RoomRepositoryInterface;
+use App\Interfaces\Services\CouponServiceInterface;
 use App\Interfaces\Services\PaymentServiceInterface;
 use App\Interfaces\Services\RoomServiceInterface;
+use App\Repositories\CouponRepository;
 use App\Repositories\PaymentRepository;
 use App\Repositories\RoomRepository;
+use App\Services\CouponService;
 use App\Services\PaymentService;
 use App\Services\RoomService;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -26,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
         $this->app->bind(RoomRepositoryInterface::class, RoomRepository::class);
         $this->app->bind(RoomServiceInterface::class, RoomService::class);
+        $this->app->bind(CouponRepositoryInterface::class, CouponRepository::class);
+        $this->app->bind(CouponServiceInterface::class, CouponService::class);
     }
 
     /**
