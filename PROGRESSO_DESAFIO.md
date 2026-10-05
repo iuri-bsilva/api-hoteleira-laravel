@@ -51,7 +51,9 @@ Histórico organizado por escopo com mensagens `feat:`, `build:`, `test:` e `doc
 - [x] Regressão concorrente após separar as consultas de reservas: 5 testes MySQL / 34 verificações passaram.
 - [x] Autenticação separada em LoginRequest, controller, service e repository com contratos registrados no container, mantendo token de oito horas e logout apenas da sessão corrente.
 - [x] Regressão da autenticação: 85 testes / 540 verificações passaram, incluindo sessões em dois dispositivos e validade do token emitido.
-- A listagem de hotéis ainda utiliza uma closure na rota. Comandos administrativos, models e seeders mantêm suas responsabilidades específicas. O roteiro de regressão está em `TESTES_MANUAIS.md`.
+- [x] Listagem de hotéis separada em controller, service e repository com interfaces, preservando vínculos, pivot e paginação.
+- [x] Revisão dos sete controllers e rotas: sem queries, cálculos, transações ou validações inline; 85 testes / 540 verificações passaram após a última refatoração.
+- Comandos administrativos, models e seeders mantêm suas responsabilidades específicas. O roteiro de regressão está em `TESTES_MANUAIS.md`.
 
 ## Limites e verificações manuais
 

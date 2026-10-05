@@ -1,5 +1,16 @@
 # Roteiro de testes manuais
 
+## Regressão da listagem de hotéis e revisão final da arquitetura
+
+Atualize a imagem Docker com `docker compose --env-file .env.docker up -d --build`. Não há migration nova.
+
+1. GET `/api/hotels` sem token: 401 JSON. Com usuário sem vínculos: 200 e `data` vazio.
+2. Com viewer ou manager vinculado a um hotel: 200, somente os hotéis vinculados, mantendo os dados do pivot e `per_page: 20`. Hotéis sem vínculo não podem aparecer.
+3. Em banco de teste com mais de 20 vínculos, confira a primeira e segunda páginas por `?page=2`, sem duplicar ou expor hotéis de outro usuário.
+4. Repita os roteiros de login, quartos, categorias, cupons, reservas e pagamentos deste documento. As rotas, JSONs e códigos HTTP devem continuar iguais aos anteriores à refatoração.
+
+Para acompanhar uma requisição no código, siga `routes/api.php → Controller → interface do Service → Service → interface do Repository → Repository → Model/banco`. O Laravel resolve as interfaces pelos bindings do `AppServiceProvider`; Requests fazem a validação antes do método do controller. Na importação XML, o comando chama a interface do serviço de reservas e utiliza a validação compartilhada sem depender de uma requisição HTTP.
+
 ## Regressão da separação Request / Service / Repository de autenticação
 
 Atualize o Docker com `docker compose --env-file .env.docker up -d --build`. Não há migration nova. Use um usuário de teste e mantenha os tokens apenas no Insomnia/Swagger, sem incluí-los na documentação ou em commits.

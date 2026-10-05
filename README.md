@@ -280,7 +280,11 @@ Datas devem ser strings válidas antes da comparação, tanto pela API quanto pe
 
 As rotas e os limites de requisições permanecem iguais. O email é buscado em minúsculas, sem alterar a senha. O token em texto aparece apenas no retorno do login; Sanctum armazena seu hash e o model oculta a senha do usuário no JSON. `/auth/me` preserva os hotéis e perfis; logout mantém os tokens de outros dispositivos. A suíte verifica credenciais incorretas, validade, revogação, isolamento entre dispositivos e limite de tentativas.
 
-Os seis controllers de autenticação, pagamentos, quartos, cupons, categorias e reservas utilizam services por interface. A listagem de hotéis ainda está em uma closure em `routes/api.php`; comandos administrativos, models e seeders mantêm sua organização específica.
+### Separação de responsabilidades em hotéis e revisão final
+
+`GET /api/hotels` utiliza `HotelController → HotelServiceInterface → HotelService → HotelRepositoryInterface → HotelRepository`. A consulta preserva os hotéis vinculados ao usuário, os dados do pivot e a paginação de 20. Usuário sem vínculos recebe 200 com lista vazia. A rota continua protegida por Sanctum e limite de requisições. Como não há corpo de entrada nem novos filtros nessa operação, não foi criado um Form Request adicional.
+
+Os sete controllers da API utilizam services por interface; `routes/api.php` apenas declara rotas e middleware. A revisão confirmou ausência de consultas Eloquent, validações inline, cálculos financeiros e transações nos controllers. Requests validam entrada, services coordenam regras e transações, repositories consultam/persistem, e `AppServiceProvider` registra os contratos. Permissões por hotel continuam centralizadas em métodos do usuário chamados pelos services/Requests. Comandos administrativos, models e seeders mantêm sua organização específica; a refatoração não criou uma abstração para cada tabela.
 
 Separação: controllers recebem HTTP, services coordenam regras e transações, repositories consultam e persistem, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 
