@@ -1,0 +1,12 @@
+.git
+.env*
+app/.env*
+app/vendor
+app/node_modules
+app/database/*.sqlite*
+app/bootstrap/cache/*.php
+app/storage/logs/*
+app/storage/framework/cache/data/*
+app/storage/framework/sessions/*
+app/storage/framework/views/*
+app/foco

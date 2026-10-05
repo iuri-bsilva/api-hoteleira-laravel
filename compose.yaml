@@ -1,0 +1,88 @@
+name: foco
+
+x-app: &app
+  image: foco-app:local
+  build:
+    context: .
+    target: runtime
+  environment: &environment
+    APP_NAME: Foco
+    APP_ENV: local
+    APP_DEBUG: "false"
+    APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+    APP_URL: http://127.0.0.1:${HTTP_PORT:-8080}
+    APP_LOCALE: en
+    LOG_CHANNEL: single
+    DB_CONNECTION: mysql
+    DB_HOST: mysql
+    DB_PORT: "3306"
+    DB_DATABASE: foco
+    DB_USERNAME: foco
+    DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+    CACHE_STORE: database
+    SESSION_DRIVER: database
+    QUEUE_CONNECTION: database
+  volumes:
+    - app_storage:/var/www/html/storage
+
+services:
+  tests:
+    profiles: ["test"]
+    image: foco-tests:local
+    build:
+      context: .
+      target: testing
+    environment:
+      APP_ENV: testing
+      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+    command: ["php", "artisan", "test"]
+
+  mysql:
+    image: mysql:8.4
+    ports:
+      - "127.0.0.1:3307:3306"
+    environment:
+      MYSQL_DATABASE: foco
+      MYSQL_USER: foco
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 primeiro}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u foco -D foco -e 'SELECT 1' >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    restart: unless-stopped
+
+  setup:
+    <<: *app
+    user: www-data
+    command: ["sh", "-c", "php artisan migrate --force && php artisan hotels:import && php artisan db:seed --class=RoomCategorySeeder --force"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    <<: *app
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  scheduler:
+    <<: *app
+    user: www-data
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      setup:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+  app_storage:
