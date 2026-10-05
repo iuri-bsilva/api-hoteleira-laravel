@@ -1,5 +1,19 @@
 # Roteiro de testes manuais
 
+## Regressão da separação Request / Service / Repository de quartos
+
+No Docker, reconstrua a imagem antes de testar: `docker compose --env-file .env.docker up -d --build`. Use hotéis, categorias e quartos de teste; não há migration nova.
+
+1. Com token manager do hotel 1, POST `/api/rooms` com `{"hotel_id":1,"name":"Quarto de regressão"}`: 201. Guarde o ID retornado. GET `/api/rooms/ID`: 200 com hotel e categoria. Listagem deve conter apenas hotéis vinculados e manter paginação de 20.
+2. PATCH com `{"name":"Quarto atualizado"}`: 200. Vincule uma categoria do mesmo hotel por `room_category_id`: 200. Categoria de outro hotel: 422, mantendo o vínculo anterior. Envie `{"room_category_id":null}` para remover o vínculo.
+3. Transfira um quarto sem reservas: sem manager no destino, 403; com manager nos dois hotéis, 200 se a categoria estiver removida ou pertencer ao destino. Uma categoria antiga mantida na transferência deve gerar 422, sem alterar o hotel.
+4. Em quarto com reserva, tentativa de transferência para outro hotel acessível: 409. DELETE: 409. Quarto sem reservas pode ser excluído: 200 com `message`, seguido de GET 404.
+5. GET `/api/rooms/availability?check_in=2029-01-10&check_out=2029-01-12&hotel_id=1`: 200, somente unidades livres para todo o período. Confira que reservas terminando na entrada ou começando na saída não bloqueiam. Links de paginação mantêm os filtros.
+6. Saída igual/anterior à entrada, datas inválidas, período acima de 366 noites ou `check_in[]=2029-01-10`: 422 JSON, sem erro 500. Período de exatamente 366 noites continua permitido.
+7. Viewer pode consultar, mas não cadastrar, alterar ou excluir. Hotel sem vínculo retorna 403 no acesso direto; sem token, 401.
+
+No código, `RoomController` apenas coordena chamadas e respostas. As regras de transferência/categoria ficam no `RoomService`, as consultas no `RoomRepository` e os campos aceitos nos Requests. A atualização/exclusão mantém bloqueio e transação no service.
+
 ## Regressão da separação Request / Service / Repository de pagamentos
 
 Use uma reserva de teste com saldo conhecido e token manager do hotel. Substitua `ID` pelo ID interno da reserva. A refatoração não exige migrations ou alteração dos JSONs. No Docker, atualize a imagem com `docker compose --env-file .env.docker up -d --build` antes de repetir estes passos.

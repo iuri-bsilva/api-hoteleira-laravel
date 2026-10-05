@@ -88,6 +88,24 @@ class RoomCategoryTest extends TestCase
         $this->postJson('/api/reservations', $this->payload($category) + ['discount' => '20', 'service_fee' => '10', 'payments' => [['method' => 1, 'value' => '90']]])->assertCreated()->assertJsonPath('total', '90.00');
     }
 
+    public function test_transfer_with_existing_category_rolls_back_until_category_is_removed(): void
+    {
+        $hotel = $this->hotel();
+        $destination = Hotel::create(['name' => 'Destino']);
+        auth()->user()->hotels()->attach($destination->id, ['role' => 'manager']);
+        $category = $this->postJson('/api/hotels/'.$hotel->id.'/categories', ['name' => 'Standard'])->assertCreated()->json('id');
+        $room = Room::create(['hotel_id' => $hotel->id, 'name' => 'Original', 'room_category_id' => $category]);
+        $url = '/api/rooms/'.$room->id;
+
+        $this->patchJson($url, ['hotel_id' => $destination->id, 'name' => 'Transferido'])
+            ->assertUnprocessable()->assertJsonValidationErrors('room_category_id');
+        $this->assertDatabaseHas('rooms', ['id' => $room->id, 'hotel_id' => $hotel->id, 'name' => 'Original', 'room_category_id' => $category]);
+
+        $this->patchJson($url, ['hotel_id' => $destination->id, 'name' => 'Transferido', 'room_category_id' => null])
+            ->assertOk()->assertJsonPath('hotel_id', $destination->id)->assertJsonPath('room_category_id', null);
+        $this->assertDatabaseHas('rooms', ['id' => $room->id, 'hotel_id' => $destination->id, 'name' => 'Transferido', 'room_category_id' => null]);
+    }
+
     public function test_viewer_reads_but_cannot_write_and_other_hotel_is_denied(): void
     {
         $hotel = $this->hotel('viewer');

@@ -3,9 +3,13 @@
 namespace App\Providers;
 
 use App\Interfaces\Repositories\PaymentRepositoryInterface;
+use App\Interfaces\Repositories\RoomRepositoryInterface;
 use App\Interfaces\Services\PaymentServiceInterface;
+use App\Interfaces\Services\RoomServiceInterface;
 use App\Repositories\PaymentRepository;
+use App\Repositories\RoomRepository;
 use App\Services\PaymentService;
+use App\Services\RoomService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -20,6 +24,8 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
         $this->app->bind(PaymentServiceInterface::class, PaymentService::class);
+        $this->app->bind(RoomRepositoryInterface::class, RoomRepository::class);
+        $this->app->bind(RoomServiceInterface::class, RoomService::class);
     }
 
     /**
