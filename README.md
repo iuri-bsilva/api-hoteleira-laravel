@@ -1,8 +1,20 @@
 # Desafio Foco — Laravel
 
-API REST em Laravel 12 e PHP 8.2+. Aplicação na pasta `app`. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais; não foi criada uma suíte PHPUnit para o desafio.
+API REST em Laravel 12 e PHP 8.2+. Aplicação na pasta `app`. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais e suíte automatizada PHPUnit.
+
+Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO.md](PROGRESSO.md). Enunciado original preservado em `Desafio.md`.
 
 ## Executar no Windows
+
+## Testes automatizados PHPUnit
+
+Na pasta `app`, após `composer install`, execute `php artisan test`. Os testes de exemplo foram substituídos por casos de autenticação, permissões por hotel, CRUD, reservas/valores/limites de disponibilidade e importação XML com rollback e idempotência. `phpunit.xml` força SQLite `:memory:` e a classe base rejeita outra configuração antes de executar migrations. Não utiliza o banco SQLite local nem o MySQL dos containers. O canal audit é desabilitado na suíte para não misturar seus registros manuais.
+
+Pelo Docker, na raiz: `docker compose --env-file .env.docker --profile test run --build --rm tests`. O serviço de testes usa uma imagem própria com dependências de desenvolvimento, sem volumes do projeto e sem depender do MySQL. A aplicação normal continua instalada com `--no-dev`. A suíte verifica regras funcionais em SQLite; concorrência com bloqueio de linha no MySQL permanece no roteiro de testes manuais.
+
+## Executar a aplicação no Windows
+
+Alternativa com Laravel, MySQL e scheduler em containers: veja [DOCKER.md](DOCKER.md). Esse ambiente usa a porta 8080 e banco independente do SQLite.
 
 ```powershell
 cd C:\PHP\Teste_Foco\app
@@ -30,7 +42,65 @@ DB_PASSWORD=
 
 Depois rode `php artisan config:clear`, `php artisan migrate` e `php artisan hotels:import`. MySQL ainda precisa ser validado manualmente nesse ambiente. Para uso com requisições concorrentes, utilize MySQL: as operações de reserva e alteração de quarto bloqueiam a linha do quarto durante a transação. SQLite não oferece bloqueio de linha.
 
+## Autenticação por token
+
+### Permissões por hotel
+
+Cada usuário inicia sem acesso a hotéis; a migração não concede vínculos aos usuários existentes. Dentro de `app`, conceda acesso com `php artisan users:hotel SEU_EMAIL 1 manager`. Use o ID interno do hotel. `viewer` permite consultar hotéis, quartos e reservas; `manager` permite também cadastrar/alterar/excluir quartos e criar reservas. Para alterar perfil: `php artisan users:hotel SEU_EMAIL 1 viewer`. Para revogar: `php artisan users:hotel SEU_EMAIL 1 revoke`. As alterações valem nas próximas requisições, sem precisar emitir novo token. Repita o comando para outros hotéis se necessário.
+
+As listagens são filtradas pelos hotéis vinculados. Sem vínculos, retornam 200 com data vazio. Acesso direto a um registro existente de hotel sem vínculo retorna 403 JSON. Operações de escrita exigem manager; mudança de hotel de quarto exige manager tanto na origem quanto no destino, além da regra que impede transferir quarto reservado. `GET /api/auth/me` retorna hotéis vinculados e perfil em `pivot.role`. A gestão dos vínculos ocorre exclusivamente pelo terminal administrativo; não há rota pública para conceder privilégios. A importação XML continua administrativa e não é limitada pelos vínculos de usuário.
+
+Crie seu usuário no terminal, dentro de `app`, com `php artisan users:create`. Informe nome, email e uma senha própria com pelo menos 12 caracteres, letras e números; a senha é solicitada de forma oculta e precisa ser confirmada. Não há cadastro público nem senha padrão. Faça login com `POST /api/auth/login` e JSON `{"email":"seu-email@exemplo.com","password":"SUA_SENHA","device_name":"Insomnia"}`. O retorno contém `access_token` e `expires_at`; o token expira após oito horas e é armazenado como hash no banco.
+
+Todas as rotas de hotéis, quartos e reservas agora exigem `Authorization: Bearer SEU_TOKEN`. No Insomnia, escolha Auth → Bearer Token e cole o token. No Swagger, clique **Authorize** e cole somente o valor de `access_token`, sem escrever Bearer. `/docs`, `/openapi.json` e o login continuam públicos. `GET /api/auth/me` consulta o usuário; `POST /api/auth/logout` revoga apenas o token usado na requisição. Após logout, faça novo login para continuar os testes.
+
+Sem token válido, a resposta é 401 JSON. Credenciais incorretas retornam 401 com mensagem genérica. Login aceita até cinco tentativas por combinação email/IP e dez por IP por minuto; rotas autenticadas aceitam 60 requisições por minuto. Excesso retorna 429, com tempo de espera em Retry-After. Usuários autenticados acessam somente os hotéis vinculados, conforme seu perfil. Para limpar registros expirados, execute `php artisan sanctum:prune-expired --hours=24`; a validade é verificada mesmo antes da limpeza.
+
+Em um novo checkout, rode `composer install` e `php artisan migrate`. Em produção, use HTTPS e `APP_DEBUG=false`. Não compartilhe tokens nem os inclua em commits.
+
+## Swagger / OpenAPI 3.0
+
+Com o servidor Laravel em execução, abra `http://127.0.0.1:8000/docs`. A página Swagger UI documenta as vinte e duas operações existentes, schemas, exemplos e respostas. Expanda uma operação, clique em **Try it out**, preencha os campos e clique em **Execute**. As requisições alteram o mesmo banco usado pelo Insomnia; escolha períodos livres para reservas.
+
+Contrato versionado: `app/public/openapi.json`, disponível em `http://127.0.0.1:8000/openapi.json`. Também pode ser importado no Insomnia. Ao mudar a API, atualize esse contrato. Os assets do Swagger UI 5.32.0 são carregados de um CDN e exigem internet para abrir a interface; o contrato JSON é servido localmente. A interface não envia o contrato para o validador externo do Swagger.
+
 ## Rotas
+
+### Categorias e disponibilidade agrupada
+
+No Docker, a preparação cria automaticamente Standard, Luxo e Suíte para cada hotel existente, sem duplicar nomes ou alterar vínculos. Para executar localmente ou após adicionar hotéis, use `php artisan db:seed --class=RoomCategorySeeder` após a importação. O seeder apenas cria categorias; vincule os quartos para formar o estoque.
+
+GET/POST `/api/hotels/{hotel}/categories` lista e cadastra categorias por hotel. Nome é único no hotel, até 100 caracteres. Viewer consulta, manager cadastra. Exemplo: `{"name":"Standard"}`. Categoria inicia com estoque zero; cada unidade é um quarto físico vinculado por `room_category_id` no POST/PATCH de quartos. Categoria deve pertencer ao mesmo hotel do quarto; pode ser null para remover vínculo. Ao transferir um quarto sem reservas de hotel, remova a categoria ou informe uma do destino. Nesta etapa não há alteração/exclusão de categorias. Vínculos representam a classificação atual dos quartos, sem histórico de classificação.
+
+GET `/api/hotels/1/categories/availability?check_in=2028-05-10&check_out=2028-05-11` retorna categorias paginadas com `rooms_count` (total vinculado) e `available_count` (livres durante todo o período). Dez quartos físicos Standard significam estoque de dez unidades. Datas obrigatórias, check-out exclusivo, até 366 noites. Categorias vazias/esgotadas retornam zero. Não conta quartos sem categoria, nem soma vagas de quartos diferentes que estejam livres apenas em partes da estadia.
+
+POST `/api/reservations` aceita **somente um** de `room_id` ou `room_category_id`. Com categoria, escolhe o quarto livre com menor ID e retorna `room_id` alocado. Demais campos e regras de desconto, cupons, taxas e pagamentos permanecem iguais. Sem unidade livre retorna 409, sem reserva parcial. No MySQL, seleção bloqueia a categoria e seus quartos na transação; consulta de estoque é informativa e não garante reserva futura. XML continua identificando quartos físicos: quartos antigos começam sem categoria e reimportar no mesmo hotel preserva vínculos. Importação que tente mudar de hotel um quarto categorizado falha e reverte o lote; remova o vínculo antes de reconciliar a origem.
+
+### Gestão de pagamentos
+
+GET `/api/reservations/{reservation}/payments` retorna `reservation_id`, `total`, `paid`, `balance`, `status` (`unpaid`, `partial` ou `paid`) e `payments`. Viewer e manager do hotel podem consultar. Reserva com total zero é considerada quitada. Os cálculos usam centavos inteiros.
+
+Manager registra recebimentos após a criação da reserva por POST na mesma rota: `{"method":1,"value":"30.00","idempotency_key":"123e4567-e89b-42d3-a456-426614174000"}`. Valor deve ser positivo, ter no máximo duas casas decimais e não superar o saldo, considerando todos os pagamentos existentes. Retorna 201 com `payment` e `summary`. Gere uma UUID nova para cada operação; em uma repetição da mesma operação, mantenha a chave. Mesma chave na mesma reserva e mesmos método/valor retornam 200 e o pagamento anterior, sem duplicar; outra combinação retorna 409. Saldo insuficiente ou campos inválidos retornam 422. Não há alteração, exclusão, estorno nem integração com gateway: a API registra recebimentos administrativos. Método mantém o código numérico do XML sem atribuir significado comercial.
+
+No MySQL, registro bloqueia quarto e reserva na transação para impedir pagamentos concorrentes acima do total. SQLite dos testes verifica regras e idempotência, sem reproduzir bloqueio de linha. `recorded_at` e `idempotency_key` ficam nulos para registros antigos, XML e pagamentos enviados na criação da reserva. Pagamentos da nova rota mantêm ID/chave durante reimportações: a origem XML só substitui pagamentos sem chave. Se a soma dos pagamentos XML e dos registros da nova rota superar o total importado, o lote inteiro é revertido. A origem deve evitar informar novamente no XML um recebimento já registrado pela API; não há conciliação automática entre fontes.
+
+### Consulta de disponibilidade
+
+GET `/api/rooms/availability?check_in=2027-10-10&check_out=2027-10-12&hotel_id=1` consulta unidades físicas livres durante todo o período. Datas obrigatórias, saída posterior à entrada e limite de 366 noites. `hotel_id` é opcional; sem filtro, retorna quartos de todos os hotéis vinculados. Viewer e manager podem consultar. Hotel sem acesso retorna 403; dados inválidos, 422. Resposta paginada com 20 quartos, `data` e `total` de unidades livres, preservando filtros nos links. Reservas que terminam na entrada ou começam na saída não geram conflito. Cada quarto é uma unidade física; o estoque agrupado também pode ser consultado nas rotas de categorias. A consulta não garante disponibilidade futura: a criação da reserva revalida o período dentro da transação e pode retornar 409.
+
+### Cupons por hotel
+
+Cupons aceitam `type`: `fixed` (padrão, valor em reais) ou `percentage` (percentual em `amount`, de 0.01 a 100.00, até duas casas). Exemplo: `{"code":"FOCO10P","type":"percentage","amount":"10.00"}`. O percentual aplica-se ao subtotal das diárias, antes da taxa. Cálculo usa inteiros, arredondando ao centavo mais próximo com empate para cima. Diárias 250.00, cupom 10% e taxa 10.00 resultam em desconto 25.00 e total 235.00. Cupons existentes recebem type fixed na migração.
+
+Manager do hotel pode listar/criar cupons por GET/POST `/hotels/{hotel}/coupons` e ativar/desativar por PATCH `/hotels/{hotel}/coupons/{coupon}` com `{"active":false}`. Código é único por hotel e normalizado para maiúsculas. Exemplo de cadastro: `{"code":"FOCO30","amount":"30.00","minimum_subtotal":"200.00","active":true}`. `valid_from` e `valid_until` são datas opcionais e inclusivas, avaliadas na data da criação da reserva, no fuso da aplicação (UTC por padrão). A validade não é avaliada pelo check-in. Valor deve ser positivo, com até duas casas decimais.
+
+Na reserva, envie `"coupon_code":"FOCO30"` e omita `discount`. Cupom deve pertencer ao hotel do quarto, estar ativo/dentro da validade e satisfazer subtotal mínimo; caso contrário, 422. Desconto do cupom é limitado ao subtotal e pode zerar o valor das diárias. Taxa continua sendo somada e pagamentos são validados pelo total final. Código e desconto ficam salvos na reserva; desativar o cupom não altera reservas antigas. Cupons são reutilizáveis, sem limite de usos; limites de utilização ainda não implementados. Não há exclusão nem alteração de código/valores: desative e crie outro código se necessário. XMLs continuam sem cupom.
+
+### Desconto e taxa de serviço
+
+POST `/reservations` aceita `discount` e `service_fee`, valores opcionais em reais com até duas casas decimais, por exemplo `"discount":"30.00","service_fee":"10.00"`. O subtotal é a soma das diárias e o total final é `subtotal - discount + service_fee`. Com diárias de 250.00, o exemplo resulta em 230.00. O servidor retorna e persiste os quatro valores separadamente. O subtotal/total enviados pelo cliente são ignorados. Ausência de desconto/taxa equivale a zero; reservas anteriores são migradas com subtotal igual ao total antigo e ajustes zero.
+
+Desconto não pode ser negativo nem superar o subtotal, mesmo se houver taxa. Desconto integral é permitido e pode resultar em total zero. Pagamentos não podem superar o total final. Subtotal, ajustes e total têm limite de 9999999999.99. Apenas manager pode criar essas reservas. Ajustes são valores fixos informados pelo gestor; cupons fixos e percentuais por hotel estão disponíveis; promoções automáticas ainda não foram implementadas. Importações XML continuam com desconto/taxa zero, preservando o formato de origem.
 
 Base: `http://127.0.0.1:8000/api`. Envie `Accept: application/json` e, nos corpos JSON, `Content-Type: application/json`.
 
@@ -61,7 +131,7 @@ Reserva:
 }
 ```
 
-O total retornado será `250.00`, calculado no servidor. Informe uma diária por noite, sem incluir a data de saída. Limite de 366 noites. Valores monetários têm no máximo duas casas decimais; cálculos usam centavos inteiros. Pagamentos são opcionais e podem ser parciais, mas não podem superar o total. `method` preserva o código numérico do XML, que não define uma tabela de significados. Uma reserva que termina no dia de entrada de outra não gera conflito. Datas históricas são aceitas para importar os exemplos. Cada quarto representa uma unidade física, com uma reserva por período.
+O total retornado será `250.00`, calculado no servidor. Informe uma diária por noite, sem incluir a data de saída. Limite de 366 noites. Valores monetários têm no máximo duas casas decimais; cálculos usam centavos inteiros. Pagamentos são opcionais e podem ser parciais, mas não podem superar o total final após os ajustes. `method` preserva o código numérico do XML, que não define uma tabela de significados. Uma reserva que termina no dia de entrada de outra não gera conflito. Datas históricas são aceitas para importar os exemplos. Cada quarto representa uma unidade física, com uma reserva por período.
 
 Erros: 422 para validação, 404 para registro inexistente e 409 para conflito de disponibilidade ou exclusão/transferência de quarto reservado. Respostas das rotas `/api/*`, inclusive erros, são JSON.
 
@@ -74,7 +144,7 @@ php artisan hotels:import --path="C:\PHP\Teste_Foco"
 
 A primeira opção lê `app/database/xml`; a segunda lê os arquivos originais e deve falhar na reserva 6. O original informa `2022-12-03` em uma reserva de `2022-10-01` a `2022-10-04`. Na cópia local, corrigimos apenas essa diária para `2022-10-03`, inferindo a terceira noite do período. Essa decisão deve ser confirmada com a origem dos dados em uma integração real.
 
-O lote inteiro é transacional: qualquer erro reverte todas as alterações desse lote. Reexecuções atualizam pelos IDs externos e substituem hóspedes, diárias e pagamentos sem duplicá-los. Registros ausentes nos XMLs não são excluídos. Reservas criadas pela API possuem código externo nulo e não são sobrescritas pelos XMLs. XML inválido, DTD e entidades são rejeitados; limite de 10 MB por arquivo. Não permita que fontes externas não confiáveis escolham o caminho de importação.
+O lote inteiro é transacional: qualquer erro reverte todas as alterações desse lote. Reexecuções atualizam pelos IDs externos e substituem hóspedes, diárias e pagamentos de origem sem duplicá-los, preservando pagamentos da nova rota. Registros ausentes nos XMLs não são excluídos. Reservas criadas pela API possuem código externo nulo e não são sobrescritas pelos XMLs. XML inválido, DTD e entidades são rejeitados; limite de 10 MB por arquivo. Não permita que fontes externas não confiáveis escolham o caminho de importação.
 
 O comando foi registrado para execução de hora em hora com proteção contra sobreposição pelo scheduler. Em Linux, adicione ao CRON (substitua o caminho):
 
@@ -88,8 +158,18 @@ Logs: `app/storage/logs/laravel.log` e, nas execuções agendadas, `app/storage/
 
 ## Modelagem
 
+## Logs da API
+
+Requisições `/api/*` recebem o header `X-Request-ID` gerado pelo servidor. O registro `api.request` contém esse identificador, ID do usuário autenticado (ou null), método HTTP, template da rota, status e duração em milissegundos. Sucessos têm nível info, respostas 4xx warning e 5xx error. Login/logout, validações, acessos negados e operações em quartos/reservas passam pelo mesmo registro. Não são gravados corpo, query string, headers, senha, token, email, IP ou dados de hóspedes nesse canal.
+
+Arquivos `storage/logs/audit-AAAA-MM-DD.log`, com retenção configurada de 14 dias. A limpeza dos arquivos antigos ocorre durante novas gravações. Datas seguem o fuso configurado na aplicação (UTC por padrão). No Docker, os logs ficam no volume persistente; consulte com `docker compose --env-file .env.docker exec app sh -c 'tail -n 20 storage/logs/audit-*.log'`. Logs técnicos Laravel e logs de importação continuam separados. O canal audit é um registro de acesso/operação, não um histórico dos valores alterados nem uma trilha inviolável. Falhas de escrita são sinalizadas no log do servidor sem mudar a resposta da API.
+
+## Estrutura do banco
+
 ```mermaid
 erDiagram
+    hotels ||--o{ room_categories : classifica
+    room_categories o|--o{ rooms : agrupa
     hotels ||--o{ rooms : possui
     rooms ||--o{ reservations : recebe
     reservations ||--|{ guests : hospeda
@@ -101,10 +181,10 @@ Migrations: `app/database/migrations/2026_10_03_000001_create_hotel_tables.php`.
 
 ## Desenvolvimento e escopo
 
-Separação: controllers recebem HTTP, `ReservationService` centraliza regras usadas pela API e importação, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API atual é uma base local sem autenticação. Autenticação, permissões, descontos, taxas, interface administrativa, Docker e OpenAPI são diferenciais ainda não implementados.
+Separação: controllers recebem HTTP, `ReservationService` centraliza regras usadas pela API e importação, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 
-Para publicar, configure autenticação/autorização e `APP_DEBUG=false`. Use o diretório `app/public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os arquivos de testes que vieram no esqueleto Laravel não foram executados.
+Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `app/public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
 
 ## Versionamento
 
-Para iniciar o repositório local, execute na raiz `git init`, `git add .` e `git commit -m "feat: implementa API hoteleira e importação XML"`. Depois, crie commits pequenos por funcionalidade (`feat:`, `fix:`, `docs:`). Não há repositório remoto configurado.
+O repositório local está inicializado. O histórico usa mensagens por escopo: `feat:` para funcionalidades, `build:` para infraestrutura, `test:` para testes, `docs:` para documentação e `fix:` para correções. Consulte `git log --oneline`. Confira `git status` e o diff antes de cada commit; `.env`, `.env.docker`, bancos locais, dependências e logs não devem ser versionados. Para novas branches, use `codex/nome-da-alteracao`. Não há repositório remoto configurado nem publicação remota nesta etapa.
