@@ -8,7 +8,25 @@ Passaram 24 verificações funcionais: migrations e contagens de importação (3
 
 O ambiente temporário, seus volumes e as credenciais de validação foram removidos ao terminar. A aplicação normal na porta 8080 e o MySQL existente não foram recriados nem usados nesses testes. Ao repetir a instalação, use checkout e banco novos, evitando apontar os testes para dados reais. Com a instalação normal, os endereços continuam 8080 para a aplicação e 3307 para o Workbench.
 
-Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, categorias padrão e scheduler. Requer Docker Desktop ativo com backend Linux/WSL2 e Docker Compose v2. Build, migrations, importação e criação das categorias conferidos até 05/10/2026. A suíte PHPUnit executa em SQLite em memória; cenários de concorrência de bloqueios no MySQL estão descritos em `TESTES_MANUAIS.md`.
+Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, categorias padrão e scheduler. No Windows, requer Docker Desktop ativo com backend Linux/WSL2; no Linux, Docker Engine em execução. Ambos utilizam Docker Compose com suporte a perfis; o perfil de integração também utiliza `tmpfs`. Build, migrations, importação e criação das categorias conferidos até 05/10/2026. A suíte PHPUnit executa em SQLite em memória; cenários de concorrência de bloqueios no MySQL estão descritos em `TESTES_MANUAIS.md`.
+
+## Iniciar no Linux
+
+Com Git, Docker/Compose e OpenSSL disponíveis, na raiz do checkout:
+
+```bash
+sh docker/init.sh
+docker compose --env-file .env.docker config --quiet
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker ps -a
+docker compose --env-file .env.docker logs setup
+docker compose --env-file .env.docker exec --user www-data app php artisan users:create
+docker compose --env-file .env.docker exec --user www-data app php artisan users:hotel SEU_EMAIL 1 manager
+```
+
+O script usa OpenSSL para gerar chave e senhas e cria `.env.docker` com permissão `600`; preserva um arquivo existente. Substitua `SEU_EMAIL` pelo email criado. Abra `http://127.0.0.1:8080/docs`, faça login e autorize com o token. Os comandos Compose de operação e testes abaixo também funcionam no terminal Linux. Não precisa de `php artisan serve` nem de CRON no host: app e scheduler já executam nos containers. Se o usuário não tiver acesso ao daemon Docker, use a configuração de acesso definida pelo administrador do computador.
+
+Para parar preservando o banco, use `docker compose --env-file .env.docker down`. Para iniciar novamente, use `docker compose --env-file .env.docker up -d`. Após alterações de código, acrescente `--build`. A instalação sem Docker está descrita em [README.md](README.md).
 
 ## Iniciar no PowerShell
 

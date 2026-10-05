@@ -17,7 +17,45 @@ Os arquivos Markdown usam nomes em maiúsculas e palavras separadas por `_`. `RE
 | [TESTES_MANUAIS.md](TESTES_MANUAIS.md) | Roteiro de testes, JSONs e resultados esperados. |
 | [README_LARAVEL.md](app/README_LARAVEL.md) | Apresentação original do framework Laravel. |
 
-## Executar no Windows
+## Executar no Linux
+
+### Com Docker (Laravel, MySQL e scheduler)
+
+Tenha Git, Docker Engine em execução, Docker Compose com suporte aos perfis deste projeto e OpenSSL disponíveis. Não precisa instalar PHP, Composer ou MySQL no host. Na primeira instalação:
+
+```bash
+git clone https://github.com/iuri-bsilva/api-hoteleira-laravel.git
+cd api-hoteleira-laravel
+sh docker/init.sh
+docker compose --env-file .env.docker config --quiet
+docker compose --env-file .env.docker up -d --build
+docker compose --env-file .env.docker ps -a
+docker compose --env-file .env.docker logs setup
+docker compose --env-file .env.docker exec --user www-data app php artisan users:create
+docker compose --env-file .env.docker exec --user www-data app php artisan users:hotel SEU_EMAIL 1 manager
+```
+
+Substitua `SEU_EMAIL` pelo email cadastrado. Abra `http://127.0.0.1:8080/docs` e faça login. Enquanto o repositório estiver privado, o clone exige uma conta com acesso. O script preserva `.env.docker` se já existir; em uma instalação nova, gera credenciais aleatórias com permissão de leitura/escrita apenas para seu usuário. O container setup prepara o banco e o scheduler executa a importação horária. Não execute `php artisan serve` nem configure CRON adicional neste ambiente. Veja os comandos de testes, operação e persistência em [GUIA_DOCKER.md](GUIA_DOCKER.md).
+
+### Sem Docker (desenvolvimento com SQLite)
+
+Tenha Git, PHP 8.2+ e Composer 2, com as extensões exigidas pelo Composer e pela aplicação, incluindo PDO SQLite, DOM/XML e mbstring. Após clonar o projeto, execute em um checkout novo:
+
+```bash
+cd api-hoteleira-laravel/app
+cp .env.example .env
+composer install
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan hotels:import
+php artisan db:seed --class=RoomCategorySeeder
+php artisan users:create
+php artisan users:hotel SEU_EMAIL 1 manager
+php artisan serve --host=127.0.0.1 --port=8000
+```
+
+O `.env.example` utiliza SQLite; sem `DB_DATABASE` definido, o Laravel usa `database/database.sqlite`. Abra `http://127.0.0.1:8000/docs`. Mantenha o terminal do servidor aberto e, em outro terminal dentro de `app`, execute `php artisan schedule:work` para o agendamento durante o desenvolvimento, ou configure o CRON descrito na seção de importação. Para testar, execute `php artisan test`. Não precisa de Node/npm para esta API. Para validar bloqueios concorrentes no MySQL, utilize o ambiente Docker.
 
 ## Testes automatizados PHPUnit
 
@@ -210,4 +248,4 @@ Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. U
 
 ## Versionamento
 
-O repositório local está inicializado. O histórico usa mensagens por escopo: `feat:` para funcionalidades, `build:` para infraestrutura, `test:` para testes, `docs:` para documentação e `fix:` para correções. Consulte `git log --oneline`. Confira `git status` e o diff antes de cada commit; `.env`, `.env.docker`, bancos locais, dependências e logs não devem ser versionados. Para novas branches, use `codex/nome-da-alteracao`. Não há repositório remoto configurado nem publicação remota nesta etapa.
+O repositório local está inicializado e conectado a `https://github.com/iuri-bsilva/api-hoteleira-laravel`. O histórico usa mensagens por escopo: `feat:` para funcionalidades, `build:` para infraestrutura, `test:` para testes, `docs:` para documentação e `fix:` para correções. Consulte `git log --oneline`. Confira `git status` e o diff antes de cada commit; `.env`, `.env.docker`, bancos locais, dependências e logs não devem ser versionados. Para novas branches, use `codex/nome-da-alteracao`.

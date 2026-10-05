@@ -9,7 +9,7 @@ x-app: &app
     APP_NAME: Foco
     APP_ENV: local
     APP_DEBUG: "false"
-    APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+    APP_KEY: ${APP_KEY:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
     APP_URL: http://127.0.0.1:${HTTP_PORT:-8080}
     APP_LOCALE: en
     LOG_CHANNEL: single
@@ -18,7 +18,7 @@ x-app: &app
     DB_PORT: "3306"
     DB_DATABASE: foco
     DB_USERNAME: foco
-    DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+    DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
     CACHE_STORE: database
     SESSION_DRIVER: database
     QUEUE_CONNECTION: database
@@ -32,8 +32,8 @@ services:
     environment:
       MYSQL_DATABASE: foco_concurrency
       MYSQL_USER: concurrency
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 primeiro}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
     tmpfs:
       - /var/lib/mysql
     healthcheck:
@@ -51,13 +51,13 @@ services:
       target: testing
     environment:
       APP_ENV: testing
-      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
       DB_CONNECTION: mysql
       DB_HOST: mysql-concurrency
       DB_PORT: "3306"
       DB_DATABASE: foco_concurrency
       DB_USERNAME: concurrency
-      DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
+      DB_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
       DB_URL: ""
       CACHE_STORE: array
       SESSION_DRIVER: array
@@ -76,7 +76,7 @@ services:
       target: testing
     environment:
       APP_ENV: testing
-      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 primeiro}
+      APP_KEY: ${APP_KEY:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
     command: ["php", "artisan", "test"]
 
   mysql:
@@ -86,8 +86,8 @@ services:
     environment:
       MYSQL_DATABASE: foco
       MYSQL_USER: foco
-      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 primeiro}
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 primeiro}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Execute docker/init.ps1 (Windows) ou sh docker/init.sh (Linux) primeiro}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
