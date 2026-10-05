@@ -8,7 +8,7 @@ Passaram 24 verificações funcionais: migrations e contagens de importação (3
 
 O ambiente temporário, seus volumes e as credenciais de validação foram removidos ao terminar. A aplicação normal na porta 8080 e o MySQL existente não foram recriados nem usados nesses testes. Ao repetir a instalação, use checkout e banco novos, evitando apontar os testes para dados reais. Com a instalação normal, os endereços continuam 8080 para a aplicação e 3307 para o Workbench.
 
-Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, categorias padrão e scheduler. No Windows, requer Docker Desktop ativo com backend Linux/WSL2; no Linux, Docker Engine em execução. Ambos utilizam Docker Compose com suporte a perfis; o perfil de integração também utiliza `tmpfs`. Build, migrations, importação e criação das categorias conferidos até 05/10/2026. A suíte PHPUnit executa em SQLite em memória; cenários de concorrência de bloqueios no MySQL estão descritos em `TESTES_MANUAIS.md`.
+Ambiente local com PHP 8.2/Apache, MySQL 8.4, migrations/importação inicial, categorias padrão e scheduler. No Windows, requer Docker Desktop ativo com backend Linux/WSL2; no Linux, Docker Engine em execução. Ambos utilizam Docker Compose com suporte a perfis; o perfil de integração também utiliza `tmpfs`. Build, migrations, importação e criação das categorias conferidos até 05/10/2026. A suíte PHPUnit executa em SQLite em memória; o perfil de integração verifica cenários de concorrência de bloqueios no MySQL.
 
 ## Iniciar no Linux
 

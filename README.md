@@ -2,7 +2,7 @@
 
 API REST em Laravel 12 e PHP 8.2+. Aplicação Laravel na raiz do repositório. A pasta `app/` contém as classes da aplicação. Os XMLs originais permanecem na raiz. Validação funcional por testes manuais e suíte automatizada PHPUnit.
 
-Checklist atualizado dos requisitos, diferenciais e limites: [PROGRESSO_DESAFIO.md](PROGRESSO_DESAFIO.md). Enunciado original preservado em `DESAFIO.md`.
+Este README apresenta a aplicação, sua instalação e os principais recursos.
 
 ## Estrutura do projeto
 
@@ -10,15 +10,12 @@ O Laravel está diretamente na raiz: `artisan`, `composer.json`, `bootstrap/`, `
 
 ## Documentação
 
-Os arquivos Markdown usam nomes em maiúsculas e palavras separadas por `_`. `README.md` é o documento principal do projeto.
+O repositório publica o README, o guia Docker, a apresentação original do Laravel e a modelagem do banco. Os documentos pessoais de acompanhamento permanecem apenas na pasta local.
 
 | Arquivo | Conteúdo |
 |---|---|
-| [DESAFIO.md](DESAFIO.md) | Enunciado original. |
-| [PROGRESSO_DESAFIO.md](PROGRESSO_DESAFIO.md) | Checklist de implementação e limites. |
 | [GUIA_DOCKER.md](GUIA_DOCKER.md) | Configuração e execução do ambiente Docker. |
 | [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md) | Modelo Workbench, diagrama e regras do banco. |
-| [TESTES_MANUAIS.md](TESTES_MANUAIS.md) | Roteiro de testes, JSONs e resultados esperados. |
 | [README_LARAVEL.md](README_LARAVEL.md) | Apresentação original do framework Laravel. |
 
 ## Executar no Linux
@@ -221,7 +218,7 @@ Logs: `storage/logs/laravel.log` e, nas execuções agendadas, `storage/logs/imp
 
 ## Modelagem
 
-Modelo completo revisado e explicações em [MODELAGEM_BANCO.md](MODELAGEM_BANCO.md). Arquivo editável do Workbench: [DER FOCO.mwb](<DER FOCO.mwb>); exportação visual: [DER FOCO.png](<DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
+Arquivo editável do Workbench: [DER FOCO.mwb](<DER FOCO.mwb>); exportação visual: [DER FOCO.png](<DER FOCO.png>). As migrations continuam sendo a fonte executável do schema.
 
 ## Logs da API
 
@@ -292,7 +289,7 @@ Os sete controllers da API utilizam services por interface; `routes/api.php` ape
 
 Separação: controllers recebem HTTP, services coordenam regras e transações, repositories consultam e persistem, models representam relações, migrations versionam o banco e `ImportHotelXml` executa a integração. Dados aceitos são validados e limitados por campos preenchíveis. A API usa autenticação Sanctum por token. Descontos e taxas fixas, Docker, autenticação e permissões foram implementados. Promoções automáticas e interface administrativa ainda não foram implementadas.
 
-Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `public` como raiz do servidor web. O roteiro de validação está em `TESTES_MANUAIS.md`. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
+Para publicar, revise os vínculos e perfis dos usuários e `APP_DEBUG=false`. Use o diretório `public` como raiz do servidor web. Os testes de exemplo foram substituídos pela suíte funcional do projeto.
 
 ## Versionamento
 

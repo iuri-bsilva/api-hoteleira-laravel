@@ -26,3 +26,11 @@ yarn-error.log
 /database/*.sqlite*
 /foco
 /storage/logs/*.log
+
+# Documentação pessoal: manter localmente, fora do repositório.
+*.md
+*.MD
+!/README.md
+!/GUIA_DOCKER.md
+!/README_LARAVEL.md
+!/MODELAGEM_BANCO.md
