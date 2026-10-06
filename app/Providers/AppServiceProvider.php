@@ -37,9 +37,6 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         $this->app->bind(HotelRepositoryInterface::class, HotelRepository::class);
@@ -58,9 +55,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(CouponServiceInterface::class, CouponService::class);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
         RateLimiter::for('api-login', fn (Request $request) => [
